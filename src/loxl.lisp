@@ -1,34 +1,29 @@
 (in-package :loxl)
 
-(defclass loxl ()
-  ((had-error :initform nil)))
+(defclass loxl () ())
 
 (defmethod report-msg ((l loxl) line where message)
-  (with-slots (had-error) l
-    (format t "[line ~a] Error~a: ~a~%" line where message)
-    (setf had-error t)))
+  (format nil "[line ~a] Error~a: ~a" line where message))
 
-(defmethod report-error ((l loxl) line message)
-  (report-msg l line "" message))
+(defmethod report-error ((l loxl) (e scanner-error))
+  (report-msg l (line e) "" (message e)))
 
-(defmethod run ((l loxl) in))
+(defmethod run ((l loxl) in)
+  (let ((s (make-instance 'scanner :source in)))
+    (scan-tokens s)))
 
 (defmethod run-prompt ((l loxl))
   (format t "> ")
   (loop for line = (read-line)
-        do (with-slots (had-error) l
-             (with-input-from-string (in line)
-               (run l in)
-
-               ;; Don't kill the session
-               (setf had-error nil)
-               (format t "> ")))))
+        do (with-input-from-string (in line)
+             (format t "~a~%"
+              (handler-case (run l in)
+                (scanner-error (e) (report-error l e))))
+             (format t "> "))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name :element-type '(unsigned-byte 8))
-    (run l in)
-    (when had-error
-      (error "TODO"))))
+    (run l in)))
 
 (defmethod main ((l loxl) args)
   (cond ((> (length args) 1)

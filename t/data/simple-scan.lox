@@ -3,6 +3,8 @@
 !*+-/=<> <= == // operators
 "farts" // A string type
 
+while
+
 // A multi-line string
 "Here's some junk
         And some more
@@ -11,3 +13,8 @@ Also this"
 123
 123.123
 123456.149503
+
+anidentifier
+and
+or
+where

@@ -92,6 +92,14 @@
 
   (add-token s :number (number-from-buffer s)))
 
+(defmethod identifier ((s scanner))
+  (loop while (or (digit-char-p (peek s))
+                  (alpha-char-p (peek s)))
+        do (advance s))
+  (add-token s (let ((word (string-from-buffer s)))
+                 (or (is-keyword word)
+                     :identifier))))
+
 (defmethod scan-token ((s scanner))
   (let ((c (advance s)))
     ;; Since we stream instead of consume the entire file, duck out earlier if EOF appears
@@ -113,9 +121,10 @@
         (#\> (add-token s (if (match s #\=) :greater-equal :greater)))
         (#\/ (if (match s #\/)
                  (progn
-                   ;; Remove double slash
+                   ;; Remove double slash from buffer
                    (pop-buffer s)
                    (pop-buffer s)
+
                    ;; Skip comments
                    (loop while (and (char/= #\newline (peek s))
                                     (not (is-at-end s)))
@@ -131,6 +140,7 @@
         (otherwise
          (cond
            ((digit-char-p c) (num s))
+           ((alpha-char-p c) (identifier s))
            (t (throw-scanner-error s "Unexpected char."))))))))
 
 (defmethod scan-tokens ((s scanner))
@@ -141,8 +151,3 @@
                        :literal nil
                        :line (slot-value s 'line))
         (tokens s)))
-
-(with-open-file (in "../t/data/simple-scan.lox")
-  (let ((s (make-instance 'scanner :source in)))
-    (scan-tokens s)
-    (tokens s)))
