@@ -17,8 +17,6 @@
          :line (slot-value s 'line)
          :message message))
 
-(defgeneric advance (scanner &key collect-char &allow-other-keys))
-
 (defmethod advance ((s scanner) &key (collect-char t))
   (with-slots (source eof-from-stream char-buffer) s
     (let ((c (read-char source nil nil)))
@@ -84,7 +82,6 @@
   (when (char= (peek s) #\.)
     (advance s)
 
-    ;; TODO Not sure about this, but I didn't like his original method
     (unless (digit-char-p (peek s))
       (throw-scanner-error s "Unexpected end of number."))
 
@@ -119,17 +116,38 @@
         (#\= (add-token s (if (match s #\=) :equal-equal :equal)))
         (#\< (add-token s (if (match s #\=) :less-equal :less)))
         (#\> (add-token s (if (match s #\=) :greater-equal :greater)))
-        (#\/ (if (match s #\/)
-                 (progn
-                   ;; Remove double slash from buffer
-                   (pop-buffer s)
-                   (pop-buffer s)
+        (#\/ (cond
+               ;; Single line comment
+               ((match s #\/)
+                (progn
+                  ;; Remove double slash from buffer
+                  (pop-buffer s)
+                  (pop-buffer s)
 
-                   ;; Skip comments
-                   (loop while (and (char/= #\newline (peek s))
-                                    (not (is-at-end s)))
-                         do (advance s :collect-char nil)))
-                 (add-token s :slash)))
+                  ;; Skip comment body
+                  (loop while (and (char/= #\newline (peek s))
+                                   (not (is-at-end s)))
+                        do (advance s :collect-char nil))))
+
+               ;; Multi-line comment
+               ((match s #\*)
+                ;; Remove slash and star from buffer
+                (pop-buffer s)
+                (pop-buffer s)
+
+                ;; Skip comments body
+                (loop while (and (char/= #\/ (peek s))
+                                 (not (is-at-end s)))
+                      do (print (peek s))
+                      do (progn
+                           (when (char= #\newline (peek s))
+                             (incf (slot-value s 'line)))
+                           (advance s :collect-char nil)))
+
+                ;; Skip slash
+                (advance s :collect-char nil))
+
+               (t (add-token s :slash))))
         (#\newline (with-slots (line) s
                      (pop-buffer s)
                      (incf line)))
@@ -151,3 +169,7 @@
                        :literal nil
                        :line (slot-value s 'line))
         (tokens s)))
+
+(with-open-file (in "../t/data/simple-scan.lox")
+  (let ((s (make-instance 'scanner :source in)))
+    (scan-tokens s)))

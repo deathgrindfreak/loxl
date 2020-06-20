@@ -5,6 +5,12 @@
 
 while
 
+/* blerg blah
+** Some more comment
+** Getting fancy
+** Moar fancy
+*/
+
 // A multi-line string
 "Here's some junk
         And some more
