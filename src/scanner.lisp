@@ -46,14 +46,21 @@
          (advance s))))
 
 (defmethod add-token ((s scanner) type &optional literal)
-  (with-slots (char-buffer line) s
+  (with-slots (line char-buffer) s
     (push (make-instance 'token
                          :type type
-                         :lexeme (coerce (reverse char-buffer) 'string)
+                         :lexeme (string-from-buffer s)
                          :literal literal
                          :line line)
           (tokens s))
     (setf char-buffer nil)))
+
+(defmethod string-from-buffer ((s scanner))
+  (coerce (reverse (slot-value s 'char-buffer))
+          'string))
+
+(defmethod number-from-buffer ((s scanner))
+  (with-input-from-string (in (string-from-buffer s)) (read in)))
 
 (defmethod str ((s scanner))
   (loop while (and (char/= (peek s) #\")
@@ -68,9 +75,22 @@
 
   (advance s)
   (add-token s :string
-             (let ((full-string (coerce (reverse (slot-value s 'char-buffer))
-                                        'string)))
+             (let ((full-string (string-from-buffer s)))
                (subseq full-string 1 (1- (length full-string))))))
+
+(defmethod num ((s scanner))
+  (loop while (digit-char-p (peek s)) do (advance s))
+
+  (when (char= (peek s) #\.)
+    (advance s)
+
+    ;; TODO Not sure about this, but I didn't like his original method
+    (unless (digit-char-p (peek s))
+      (throw-scanner-error s "Unexpected end of number."))
+
+    (loop while (digit-char-p (peek s)) do (advance s)))
+
+  (add-token s :number (number-from-buffer s)))
 
 (defmethod scan-token ((s scanner))
   (let ((c (advance s)))
@@ -108,7 +128,10 @@
         (#\return (pop-buffer s))
         (#\tab (pop-buffer s))
         (#\" (str s))
-        (otherwise (throw-scanner-error s "Unexpected char."))))))
+        (otherwise
+         (cond
+           ((digit-char-p c) (num s))
+           (t (throw-scanner-error s "Unexpected char."))))))))
 
 (defmethod scan-tokens ((s scanner))
   (loop while (not (is-at-end s)) do (scan-token s))
