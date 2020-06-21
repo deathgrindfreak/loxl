@@ -1,10 +1,14 @@
 (in-package :token)
 
 (defclass token ()
-  ((type :initarg :type)
-   (lexeme :initarg :lexeme)
-   (literal :initarg :literal)
-   (line :initarg :line)))
+  ((type :initarg :type
+         :reader token-type)
+   (lexeme :initarg :lexeme
+           :reader lexeme)
+   (literal :initarg :literal
+            :reader literal)
+   (line :initarg :line
+         :reader token-line)))
 
 (defmethod print-object ((tk token) out)
   (with-slots (type lexeme literal) tk

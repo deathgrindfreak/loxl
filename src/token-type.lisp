@@ -29,5 +29,4 @@
           finally (return m))))
 
 (defun is-keyword (ident)
-  (gethash (intern (string-upcase ident) "KEYWORD")
-           *keyword-map*))
+  (gethash (as-keyword ident) *keyword-map*))

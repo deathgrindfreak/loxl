@@ -10,7 +10,9 @@
   :pathname "src/"
   :serial t
   :components ((:file "package")
+               (:file "util")
                (:file "token-type")
                (:file "token")
                (:file "scanner")
+               (:file "ast")
                (:file "loxl")))

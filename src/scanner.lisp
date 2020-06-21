@@ -138,7 +138,6 @@
                 ;; Skip comments body
                 (loop while (and (char/= #\/ (peek s))
                                  (not (is-at-end s)))
-                      do (print (peek s))
                       do (progn
                            (when (char= #\newline (peek s))
                              (incf (slot-value s 'line)))
@@ -170,6 +169,6 @@
                        :line (slot-value s 'line))
         (tokens s)))
 
-(with-open-file (in "../t/data/simple-scan.lox")
-  (let ((s (make-instance 'scanner :source in)))
-    (scan-tokens s)))
+;; (with-open-file (in "../t/data/simple-scan.lox")
+;;   (let ((s (make-instance 'scanner :source in)))
+;;     (scan-tokens s)))
