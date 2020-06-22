@@ -1,14 +1,15 @@
 (in-package :ast)
 
-(defun slots->defclass-slots (slots)
-  (loop for slot in slots
-        collect (let ((s (if (listp slot) (cadr slot) slot)))
-                  `(,s :initarg ,(as-keyword s)
-                       :reader ,s
-                       ,@(when (listp slot) (list :type (car slot)))))))
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defun slots->defclass-slots (slots)
+    (loop for slot in slots
+          collect (let ((s (if (listp slot) (cadr slot) slot)))
+                    `(,s :initarg ,(as-keyword s)
+                         :reader ,s
+                         ,@(when (listp slot) (list :type (car slot)))))))
 
-(defun slot-values (slots)
-  (mapcar #'(lambda (x) (if (listp x) (cadr x) x)) slots))
+  (defun slot-values (slots)
+    (mapcar #'(lambda (x) (if (listp x) (cadr x) x)) slots)))
 
 (defmacro define-ast (base subclasses)
   `(progn
@@ -46,7 +47,7 @@
 
 (define-ast expr
   ((binary (expr left) (token operator) (expr right))
-   (grouping (expr expression))
+   (grouping (expr group))
    (literal value)
    (unary (token operator) (expr right))))
 
@@ -65,7 +66,7 @@
   (parenthesize (lexeme (operator u)) (right u)))
 
 (defmethod print-ast ((g grouping))
-  (parenthesize "group" (expression g)))
+  (parenthesize "group" (group g)))
 
 (defmethod print-ast ((l literal))
   (or (value l) "nil"))
