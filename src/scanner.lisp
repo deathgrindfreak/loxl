@@ -1,8 +1,13 @@
 (in-package :scanner)
 
+(defparameter *initial-token-size* 100)
+
 (defclass scanner ()
   ((source :initarg :source)
-   (tokens :initform nil
+   (tokens :initform (make-array *initial-token-size*
+                                 :fill-pointer 0
+                                 :adjustable t
+                                 :element-type 'token)
            :accessor tokens)
    (eof-from-stream :initform nil)
    (char-buffer :initform nil)
@@ -45,12 +50,13 @@
 
 (defmethod add-token ((s scanner) type &optional literal)
   (with-slots (line char-buffer) s
-    (push (make-instance 'token
-                         :type type
-                         :lexeme (string-from-buffer s)
-                         :literal literal
-                         :line line)
-          (tokens s))
+    (vector-push-extend
+     (make-instance 'token
+                    :type type
+                    :lexeme (string-from-buffer s)
+                    :literal literal
+                    :line line)
+     (tokens s))
     (setf char-buffer nil)))
 
 (defmethod string-from-buffer ((s scanner))
@@ -162,12 +168,14 @@
 
 (defmethod scan-tokens ((s scanner))
   (loop while (not (is-at-end s)) do (scan-token s))
-  (push (make-instance 'token
-                       :type :eof
-                       :lexeme ""
-                       :literal nil
-                       :line (slot-value s 'line))
-        (tokens s)))
+  (vector-push-extend
+   (make-instance 'token
+                  :type :eof
+                  :lexeme ""
+                  :literal nil
+                  :line (slot-value s 'line))
+   (tokens s))
+  (tokens s))
 
 ;; (with-open-file (in "../t/data/simple-scan.lox")
 ;;   (let ((s (make-instance 'scanner :source in)))
