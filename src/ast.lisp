@@ -5,7 +5,6 @@
     (loop for slot in slots
           collect (let ((s (if (listp slot) (cadr slot) slot)))
                     `(,s :initarg ,(as-keyword s)
-                         :reader ,s
                          ,@(when (listp slot) (list :type (car slot)))))))
 
   (defun slot-values (slots)
@@ -30,19 +29,6 @@
                          (with-slots ,(slot-values slots) ,inst-name
                            (print-unreadable-object (,inst-name out :type t)
                              (format out "~{~a~^ ~}" (list ,@(slot-values slots)))))))))
-               subclasses))
-
-     ;; Export the base class
-     (export ',base)
-
-     ;; Export subclasses and their slots
-     ,@(apply #'append
-              (mapcar
-               #'(lambda (subclass)
-                   (cons
-                    `(export ',(car subclass))
-                    (mapcar #'(lambda (slot) `(export ',slot))
-                            (slot-values (cdr subclass)))))
                subclasses))))
 
 (define-ast expr
@@ -60,16 +46,18 @@
           (mapcar #'print-ast args)))
 
 (defmethod print-ast ((b binary))
-  (parenthesize (lexeme (operator b)) (left b) (right b)))
+  (with-slots (left operator right) b
+    (parenthesize (lexeme operator) left right)))
 
 (defmethod print-ast ((u unary))
-  (parenthesize (lexeme (operator u)) (right u)))
+  (with-slots (operator right) u
+    (parenthesize (lexeme operator) right)))
 
 (defmethod print-ast ((g grouping))
-  (parenthesize "group" (group g)))
+  (parenthesize "group" (slot-value g 'group)))
 
 (defmethod print-ast ((l literal))
-  (or (value l) "nil"))
+  (or (slot-value l 'value) "nil"))
 
 
 

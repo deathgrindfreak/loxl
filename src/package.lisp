@@ -29,6 +29,11 @@
    :util
    :token)
   (:export
+   :expr
+   :binary
+   :grouping
+   :literal
+   :unary
    :print-ast))
 
 (defpackage :scanner
