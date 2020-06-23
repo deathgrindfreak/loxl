@@ -10,6 +10,7 @@
    '(;; Single-character tokens.
      :left-paren :right-paren :left-brace :right-brace
      :comma :dot :minus :plus :semicolon :slash :star
+     :question :colon
 
      ;; One or two character tokens.
      :bang :bang-equal

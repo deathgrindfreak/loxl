@@ -118,6 +118,8 @@
         (#\+ (add-token s :plus))
         (#\; (add-token s :semicolon))
         (#\* (add-token s :star))
+        (#\? (add-token s :question))
+        (#\: (add-token s :colon))
         (#\! (add-token s (if (match s #\=) :bang-equal :bang)))
         (#\= (add-token s (if (match s #\=) :equal-equal :equal)))
         (#\< (add-token s (if (match s #\=) :less-equal :less)))

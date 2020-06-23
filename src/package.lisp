@@ -30,6 +30,7 @@
    :token)
   (:export
    :expr
+   :ternary
    :binary
    :grouping
    :literal

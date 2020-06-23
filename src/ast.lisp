@@ -32,7 +32,8 @@
                subclasses))))
 
 (define-ast expr
-  ((binary (expr left) (token operator) (expr right))
+  ((ternary (expr predicate) (expr true-expr) (expr false-expr))
+   (binary (expr left) (token operator) (expr right))
    (grouping (expr group))
    (literal value)
    (unary (token operator) (expr right))))
@@ -44,6 +45,10 @@
   (format nil "(~a ~{~a~^ ~})"
           name
           (mapcar #'print-ast args)))
+
+(defmethod print-ast ((b ternary))
+  (with-slots (predicate true-expr false-expr) b
+    (parenthesize "ternary" predicate true-expr false-expr)))
 
 (defmethod print-ast ((b binary))
   (with-slots (left operator right) b

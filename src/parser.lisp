@@ -97,8 +97,20 @@
 
 (define-binary-parser comma equality (:comma))
 
+(defmethod ternary ((p parser))
+  (let ((expr (comma p)))
+    (when (match p :question)
+      (let ((true-expr (ternary p)))
+        (unless (match p :colon)
+          (throw-parser-error p "Expected ':' in ternary."))
+        (setf expr (make-instance 'ternary
+                                  :predicate expr
+                                  :true-expr true-expr
+                                  :false-expr (ternary p)))))
+    expr))
+
 (defmethod expression ((p parser))
-  (comma p))
+  (ternary p))
 
 ;; (defmethod parse ((p parser))
 ;;   (handler-case (expression p)
