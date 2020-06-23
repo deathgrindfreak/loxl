@@ -31,13 +31,14 @@
              (format t "> "))))
 
 (defmethod run-file ((l loxl) file-name)
-  (with-open-file (in file-name :element-type '(unsigned-byte 8))
+  (with-open-file (in file-name)
     ;; TODO Need error handling here
     (run l in)))
 
-(defmethod main ((l loxl) args)
-  (cond ((> (length args) 1)
-         (error "Usage: loxl [script]"))
-        ((= 1 (length args))
-         (run-file l (car args)))
-        (t (run-prompt l))))
+(defun main (&optional args)
+  (let ((l (make-instance 'loxl)))
+    (cond ((> (length args) 1)
+           (error "Usage: loxl [script]"))
+          ((= 1 (length args))
+           (run-file l (car args)))
+          (t (run-prompt l)))))
