@@ -15,4 +15,5 @@
                (:file "token")
                (:file "scanner")
                (:file "ast")
+               (:file "parser")
                (:file "loxl")))

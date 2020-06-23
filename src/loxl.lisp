@@ -5,12 +5,20 @@
 (defmethod report-msg ((l loxl) line where message)
   (format nil "[line ~a] Error~a: ~a" line where message))
 
-(defmethod report-error ((l loxl) (e scanner-error))
-  (report-msg l (line e) "" (message e)))
+(defmethod handle-scanner-error ((l loxl) (e scanner-error))
+  (report-msg l (error-line e) "" (scanner-error-message e)))
+
+(defmethod handle-parse-error ((l loxl) (e parser-error))
+  (let ((tk (error-token e))
+        (msg (parser-error-message e)))
+    (if (eq :eof (token-type tk))
+        (report-msg l (token-line tk) " at end" msg)
+        (report-msg l (token-line tk) (format nil " at '~a'" (lexeme tk)) msg))))
 
 (defmethod run ((l loxl) in)
-  (let ((s (make-instance 'scanner :source in)))
-    (scan-tokens s)))
+  (let ((tokens (scan-tokens (make-instance 'scanner :source in))))
+    (print-ast
+     (parse (make-instance 'parser :tokens tokens)))))
 
 (defmethod run-prompt ((l loxl))
   (format t "> ")
@@ -18,11 +26,13 @@
         do (with-input-from-string (in line)
              (format t "~a~%"
               (handler-case (run l in)
-                (scanner-error (e) (report-error l e))))
+                (scanner-error (e) (handle-scanner-error l e))
+                (parser-error (e) (handle-parse-error l e))))
              (format t "> "))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name :element-type '(unsigned-byte 8))
+    ;; TODO Need error handling here
     (run l in)))
 
 (defmethod main ((l loxl) args)

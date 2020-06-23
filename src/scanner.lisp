@@ -14,8 +14,8 @@
    (line :initform 1)))
 
 (define-condition scanner-error (error)
-  ((line :initarg :line :reader line)
-   (message :initarg :message :reader message)))
+  ((line :initarg :line :reader error-line)
+   (message :initarg :message :reader scanner-error-message)))
 
 (defmethod throw-scanner-error ((s scanner) message)
   (error 'scanner-error
