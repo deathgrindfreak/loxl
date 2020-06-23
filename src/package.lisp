@@ -10,13 +10,12 @@
    :util)
   (:export
    :is-keyword
-   :+keywords+
-   :+token-type+))
+   :*keywords*
+   :*token-type*))
 
 (defpackage :token
   (:use
-   :common-lisp
-   :token-type)
+   :common-lisp)
   (:export
    :token
    :token-type

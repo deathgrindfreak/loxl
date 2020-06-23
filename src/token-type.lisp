@@ -1,12 +1,12 @@
 (in-package :token-type)
 
-(defconstant +keywords+
+(defparameter *keywords*
   '(:and :class :else :false :fun :for :if :nil :or
     :print :return :super :this :true :var :while))
 
-(defconstant +token-type+
+(defparameter *token-type*
   (append
-   +keywords+
+   *keywords*
    '(;; Single-character tokens.
      :left-paren :right-paren :left-brace :right-brace
      :comma :dot :minus :plus :semicolon :slash :star
@@ -23,8 +23,8 @@
      :eof)))
 
 (defparameter *keyword-map*
-  (let ((m (make-hash-table :size (length +keywords+))))
-    (loop for keyword in +keywords+
+  (let ((m (make-hash-table :size (length *keywords*))))
+    (loop for keyword in *keywords*
           do (setf (gethash keyword m) keyword)
           finally (return m))))
 
