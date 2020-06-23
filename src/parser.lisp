@@ -95,8 +95,10 @@
 
 (define-binary-parser equality comparison (:bang-equal :equal-equal))
 
+(define-binary-parser comma equality (:comma))
+
 (defmethod expression ((p parser))
-  (equality p))
+  (comma p))
 
 ;; (defmethod parse ((p parser))
 ;;   (handler-case (expression p)
