@@ -15,9 +15,14 @@
         (report-msg l (token-line tk) " at end" msg)
         (report-msg l (token-line tk) (format nil " at '~a'" (lexeme tk)) msg))))
 
+(defmethod handle-runtime-error ((l loxl) (e runtime-error))
+  (let ((tk (runtime-error-token e))
+        (msg (runtime-error-message e)))
+    (report-msg l (token-line tk) " runtime" msg)))
+
 (defmethod run ((l loxl) in)
   (let ((tokens (scan-tokens (make-instance 'scanner :source in))))
-    (print-ast
+    (interpret
      (parse (make-instance 'parser :tokens tokens)))))
 
 (defmethod run-prompt ((l loxl))
@@ -27,7 +32,8 @@
              (format t "~a~%"
               (handler-case (run l in)
                 (scanner-error (e) (handle-scanner-error l e))
-                (parser-error (e) (handle-parse-error l e))))
+                (parser-error (e) (handle-parse-error l e))
+                (runtime-error (e) (handle-runtime-error l e))))
              (format t "> "))))
 
 (defmethod run-file ((l loxl) file-name)

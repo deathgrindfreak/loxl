@@ -65,11 +65,23 @@
    :error-token
    :parser-error-message))
 
+(defpackage :interpreter
+  (:use
+   :common-lisp
+   :token
+   :ast)
+  (:export
+   :interpret
+   :runtime-error
+   :runtime-error-token
+   :runtime-error-message))
+
 (defpackage :loxl
   (:use
    :common-lisp
    :scanner
    :parser
+   :interpreter
    :token
    :ast)
   (:export

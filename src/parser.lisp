@@ -52,6 +52,7 @@
 
 (defmethod primary ((p parser))
   (cond
+    ;; TODO We might need some other mechanism here for false
     ((match p :false) (make-instance 'literal :value nil))
     ((match p :true) (make-instance 'literal :value t))
     ((match p :nil) (make-instance 'literal :value nil))

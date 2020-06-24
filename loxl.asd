@@ -16,4 +16,5 @@
                (:file "scanner")
                (:file "ast")
                (:file "parser")
+               (:file "interpreter")
                (:file "loxl")))
