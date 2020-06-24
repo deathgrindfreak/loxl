@@ -10,33 +10,32 @@
   (defun slot-values (slots)
     (mapcar #'(lambda (x) (if (listp x) (cadr x) x)) slots)))
 
-(defmacro define-ast (base subclasses)
+(defmacro define-ast (base &body subclasses)
   `(progn
      (defclass ,base () ())
 
      ,@(apply #'append
               (mapcar
                #'(lambda (subclass)
-                   (let ((name (car subclass))
-                         (slots (cdr subclass))
-                         (inst-name (gensym)))
-                     (list
-                       `(defclass ,name (,base)
-                         ,(slots->defclass-slots slots))
+                   (destructuring-bind (name &rest slots) subclass
+                     (with-gensyms (inst-name)
+                       (list
+                        `(defclass ,name (,base)
+                           ,(slots->defclass-slots slots))
 
-                       ;; Pretty print data object
-                       `(defmethod print-object ((,inst-name ,name) out)
-                         (with-slots ,(slot-values slots) ,inst-name
-                           (print-unreadable-object (,inst-name out :type t)
-                             (format out "~{~a~^ ~}" (list ,@(slot-values slots)))))))))
+                        ;; Pretty print data object
+                        `(defmethod print-object ((,inst-name ,name) out)
+                           (with-slots ,(slot-values slots) ,inst-name
+                             (print-unreadable-object (,inst-name out :type t)
+                               (format out "~{~a~^ ~}" (list ,@(slot-values slots))))))))))
                subclasses))))
 
 (define-ast expr
-  ((ternary (expr predicate) (expr true-expr) (expr false-expr))
-   (binary (expr left) (token operator) (expr right))
-   (grouping (expr group))
-   (literal value)
-   (unary (token operator) (expr right))))
+  (ternary (expr predicate) (expr true-expr) (expr false-expr))
+  (binary (expr left) (token operator) (expr right))
+  (grouping (expr group))
+  (literal value)
+  (unary (token operator) (expr right)))
 
 (defgeneric print-ast (expr)
   (:documentation "Pretty prints the AST"))

@@ -2,6 +2,7 @@
   (:use
    :common-lisp)
   (:export
+   :with-gensyms
    :as-keyword))
 
 (defpackage :token-type
@@ -53,6 +54,7 @@
 (defpackage :parser
   (:use
    :common-lisp
+   :util
    :ast
    :token-type
    :token)

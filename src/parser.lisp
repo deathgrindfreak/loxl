@@ -70,32 +70,40 @@
                      :right (unary p))
       (primary p)))
 
-(defmacro define-binary-parser (name subexpr tokens)
-  (let ((p (gensym))
-        (expr (gensym))
-        (operator (gensym))
-        (right (gensym)))
-    `(defmethod ,name ((,p parser))
-       (let ((,expr (,subexpr ,p)))
-         (loop while (match ,p ,@tokens)
-               do (let ((,operator (previous ,p))
-                        (,right (,subexpr ,p)))
-                    (setf ,expr (make-instance 'binary
-                                               :left ,expr
-                                               :operator ,operator
-                                               :right ,right)))
-               finally (return ,expr))))))
+(defmacro define-binary-parser (name &body body)
+  (with-gensyms (p expr operator right)
+    (let ((subexpr (getf body :operand))
+          (tokens (getf body :operators)))
+      `(defmethod ,name ((,p parser))
+         (let ((,expr (,subexpr ,p)))
+           (loop while (match ,p ,@tokens)
+                 do (let ((,operator (previous ,p))
+                          (,right (,subexpr ,p)))
+                      (setf ,expr (make-instance 'binary
+                                                 :left ,expr
+                                                 :operator ,operator
+                                                 :right ,right)))
+                 finally (return ,expr)))))))
 
-(define-binary-parser multiplication unary (:slash :star))
+(define-binary-parser multiplication
+  :operand unary
+  :operators (:slash :star))
 
-(define-binary-parser addition multiplication (:minus :plus))
+(define-binary-parser addition
+  :operand multiplication
+  :operators (:minus :plus))
 
-(define-binary-parser comparison addition
-  (:greater :greater-equal :less :less-equal))
+(define-binary-parser comparison
+  :operand addition
+  :operators (:greater :greater-equal :less :less-equal))
 
-(define-binary-parser equality comparison (:bang-equal :equal-equal))
+(define-binary-parser equality
+  :operand comparison
+  :operators (:bang-equal :equal-equal))
 
-(define-binary-parser comma equality (:comma))
+(define-binary-parser comma
+  :operand equality
+  :operators (:comma))
 
 (defmethod ternary ((p parser))
   (let ((expr (comma p)))
