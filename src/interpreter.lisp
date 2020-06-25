@@ -44,7 +44,11 @@
                    (t (throw-runtime-error
                        operator
                        "Operands must be two numbers or two strings."))))
-          (:slash (op #'/))
+          (:slash (if (zerop r)
+                      (throw-runtime-error
+                       operator
+                       "Division by zero.")
+                      (op #'/)))
           (:star (op #'*))
           (:greater (op #'>))
           (:greater-equal (op #'>=))
