@@ -2,7 +2,8 @@
 
 (defclass parser ()
   ((tokens :initarg :tokens)
-   (current :initform 0)))
+   (current :initform 0)
+   (had-parse-error :initform nil)))
 
 (define-condition parser-error (error)
   ((token :initarg :token :reader error-token)
@@ -10,6 +11,9 @@
 
 (defmethod throw-parser-error ((p parser) message)
   (error 'parser-error :token (peek p) :message message))
+
+(defmethod had-error ((p parser))
+  (slot-value p 'had-parse-error))
 
 (defmethod peek ((p parser))
   (with-slots (tokens current) p
@@ -43,11 +47,11 @@
 
 (defmethod synchronize ((p parser))
   (advance p)
-  (loop while (or (not (is-at-end p))
-                  (eq (token-type (previous p)) :semicolon)
-                  (member (token-type (peek p))
-                          '(:class :fun :var :for
-                            :if :while :print :return)))
+  (loop while (not (or (is-at-end p)
+                       (eq (token-type (previous p)) :semicolon)
+                       (member (token-type (peek p))
+                               '(:class :fun :var :for
+                                 :if :while :print :return))))
         do (advance p)))
 
 (defmethod primary ((p parser))
@@ -62,6 +66,7 @@
      (let ((expr (expression p)))
        (consume p :right-paren "Expect ')' after expression.")
        (make-instance 'grouping :group expr)))
+    ((match p :identifier) (make-instance 'variable-expr :name (previous p)))
     (t (throw-parser-error p "Expect expression."))))
 
 (defmethod unary ((p parser))
@@ -131,11 +136,30 @@
     (consume p :semicolon "Expect ';' after expression.")
     (make-instance 'expr-stmt :expression expr)))
 
+(defmethod var-declaration ((p parser))
+  (let ((name (consume p :identifier "Expect variable name."))
+        (initializer nil))
+    (when (match p :equal)
+      (setf initializer (expression p)))
+    (consume p :semicolon "Expect ';' after variable declaration.")
+    (make-instance 'var-stmt :name name :initializer initializer)))
+
 (defmethod statement ((p parser))
   (if (match p :print)
       (print-statement p)
       (expr-statement p)))
 
+(defmethod declaration-stmt ((p parser))
+  (if (match p :var)
+      (var-declaration p)
+      (statement p)))
+
 (defmethod parse ((p parser))
-  (loop while (not (is-at-end p))
-        collect (statement p)))
+  (let ((stmts
+          (loop while (not (is-at-end p))
+                collect (restart-case (declaration-stmt p)
+                          (sync-after-parse-error ()
+                            (progn
+                              (setf (slot-value p 'had-parse-error) t)
+                              (synchronize p)))))))
+    (unless (had-error p) stmts)))

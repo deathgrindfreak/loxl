@@ -35,9 +35,11 @@
   (binary (expr left) (token operator) (expr right))
   (grouping (expr group))
   (literal value)
-  (unary (token operator) (expr right)))
+  (unary (token operator) (expr right))
+  (variable-expr (token name)))
 
 (define-ast stmt
+  (var-stmt (token name) (expr initializer))
   (expr-stmt (expr expression))
   (print-stmt (expr expression)))
 

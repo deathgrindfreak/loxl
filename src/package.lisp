@@ -30,6 +30,8 @@
    :util
    :token)
   (:export
+   :variable-expr
+   :var-stmt
    :expr-stmt
    :print-stmt
    :expr
@@ -65,6 +67,7 @@
    :parser
    :parser-error
    :error-token
+   :sync-after-parse-error
    :parser-error-message))
 
 (defpackage :interpreter
