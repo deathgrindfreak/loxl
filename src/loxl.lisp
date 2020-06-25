@@ -18,7 +18,7 @@
 (defmethod handle-runtime-error ((l loxl) (e runtime-error))
   (let ((tk (runtime-error-token e))
         (msg (runtime-error-message e)))
-    (report-msg l (token-line tk) " runtime" msg)))
+    (report-msg l (token-line tk) "" msg)))
 
 (defmethod run ((l loxl) in)
   (let ((tokens (scan-tokens (make-instance 'scanner :source in))))

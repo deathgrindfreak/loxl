@@ -26,21 +26,23 @@
       (if p (evaluate te) (evaluate fe)))))
 
 (defmethod evaluate ((b binary))
-  (with-slots (ast::left ast::operator ast::right) b
-    (let ((l (evaluate ast::left))
-          (r (evaluate ast::right)))
+  (with-slots ((left ast::left) (operator ast::operator) (right ast::right)) b
+    (let ((l (evaluate left))
+          (r (evaluate right)))
       (flet ((op (o)
-               (check-number-operands ast::operator l r)
+               (check-number-operands operator l r)
                (funcall o l r)))
-        (case (token-type ast::operator)
+        (case (token-type operator)
+          ;; Right now just return the rightmost operand
+          (:comma r)
           (:minus (op #'-))
           (:plus (cond
                    ((and (numberp l) (numberp r))
                     (+ l r))
-                   ((and (stringp l) (stringp r))
-                    (concatenate 'string l r))
+                   ((or (stringp l) (stringp r))
+                    (format nil "~a~a" l r))
                    (t (throw-runtime-error
-                       ast::operator
+                       operator
                        "Operands must be two numbers or two strings."))))
           (:slash (op #'/))
           (:star (op #'*))
