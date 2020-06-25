@@ -107,12 +107,8 @@
   :operand comparison
   :operators (:bang-equal :equal-equal))
 
-(define-binary-parser comma
-  :operand equality
-  :operators (:comma))
-
 (defmethod ternary ((p parser))
-  (let ((expr (comma p)))
+  (let ((expr (equality p)))
     (when (match p :question)
       (let ((true-expr (ternary p)))
         (unless (match p :colon)
@@ -137,8 +133,12 @@
                      :message "Invalid assignment target.")))
         expr)))
 
+(define-binary-parser comma
+  :operand assignment
+  :operators (:comma))
+
 (defmethod expression ((p parser))
-  (assignment p))
+  (comma p))
 
 (defmethod print-statement ((p parser))
   (let ((value (expression p)))
