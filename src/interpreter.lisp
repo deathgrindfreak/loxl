@@ -15,6 +15,12 @@
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
 
+(defmethod evaluate ((i interpreter) (e assign))
+  (with-slots ((value ast::value) (name ast::name)) e
+    (let ((v (evaluate i value)))
+      (assign (environment i) name v)
+      v)))
+
 (defmethod evaluate ((i interpreter) (e var-expr))
   (resolve (environment i) (slot-value e 'ast::name)))
 

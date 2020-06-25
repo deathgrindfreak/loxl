@@ -30,6 +30,7 @@
    :util
    :token)
   (:export
+   :assign
    :var-expr
    :var-stmt
    :expr-stmt

@@ -31,6 +31,7 @@
                subclasses))))
 
 (define-ast expr
+  (assign (token name) (expr value))
   (ternary (expr predicate) (expr true-expr) (expr false-expr))
   (binary (expr left) (token operator) (expr right))
   (grouping (expr group))

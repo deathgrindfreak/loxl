@@ -123,8 +123,22 @@
                                   :false-expr (ternary p)))))
     expr))
 
+(defmethod assignment ((p parser))
+  (let ((expr (ternary p)))
+    (if (match p :equal)
+        (let ((equals (previous p))
+              (value (assignment p)))
+          (if (eq 'var-expr (type-of expr))
+              (make-instance 'assign
+                             :name (slot-value expr 'ast::name)
+                             :value value)
+              (error 'parser-error
+                     :token equals
+                     :message "Invalid assignment target.")))
+        expr)))
+
 (defmethod expression ((p parser))
-  (ternary p))
+  (assignment p))
 
 (defmethod print-statement ((p parser))
   (let ((value (expression p)))
@@ -158,6 +172,7 @@
   (let ((stmts
           (loop while (not (is-at-end p))
                 collect (restart-case (declaration-stmt p)
+                          ;; TODO May need to discern between panic and non-panic mode
                           (sync-after-parse-error ()
                             (progn
                               (setf (slot-value p 'had-parse-error) t)
