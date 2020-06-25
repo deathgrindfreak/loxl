@@ -16,5 +16,7 @@
                (:file "scanner")
                (:file "ast")
                (:file "parser")
+               (:file "runtime-error")
+               (:file "environment")
                (:file "interpreter")
                (:file "loxl")))

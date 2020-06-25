@@ -30,7 +30,7 @@
    :util
    :token)
   (:export
-   :variable-expr
+   :var-expr
    :var-stmt
    :expr-stmt
    :print-stmt
@@ -76,6 +76,7 @@
    :token
    :ast)
   (:export
+   :interpreter
    :interpret
    :runtime-error
    :runtime-error-token

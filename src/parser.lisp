@@ -66,7 +66,7 @@
      (let ((expr (expression p)))
        (consume p :right-paren "Expect ')' after expression.")
        (make-instance 'grouping :group expr)))
-    ((match p :identifier) (make-instance 'variable-expr :name (previous p)))
+    ((match p :identifier) (make-instance 'var-expr :name (previous p)))
     (t (throw-parser-error p "Expect expression."))))
 
 (defmethod unary ((p parser))

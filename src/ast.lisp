@@ -36,7 +36,7 @@
   (grouping (expr group))
   (literal value)
   (unary (token operator) (expr right))
-  (variable-expr (token name)))
+  (var-expr (token name)))
 
 (define-ast stmt
   (var-stmt (token name) (expr initializer))

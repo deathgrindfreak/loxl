@@ -1,13 +1,8 @@
 (in-package :interpreter)
 
-(define-condition runtime-error (error)
-  ((token :initarg :token :reader runtime-error-token)
-   (message :initarg :message :reader runtime-error-message)))
-
-(defun throw-runtime-error (token message)
-  (error 'runtime-error
-         :token token
-         :message message))
+(defclass interpreter ()
+  ((environment :initform (make-instance 'environment)
+                :reader environment)))
 
 (defun check-number-operand (operator operand)
   (unless (numberp operand)
@@ -17,28 +12,39 @@
   (unless (and (numberp left) (numberp right))
     (throw-runtime-error operator "Operands must be a numbers.")))
 
-(defgeneric evaluate (expr)
+(defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
 
-(defmethod evaluate ((e expr-stmt))
-  (evaluate (slot-value e 'ast::expression))
+(defmethod evaluate ((i interpreter) (e var-expr))
+  (resolve (environment i) (slot-value e 'ast::name)))
+
+(defmethod evaluate ((i interpreter) (e var-stmt))
+  (with-slots ((name ast::name) (init ast::initializer)) e
+    (let ((value))
+      (when init
+        (setf value (evaluate i init)))
+      (define (environment i) (lexeme name) value)))
   nil)
 
-(defmethod evaluate ((e print-stmt))
+(defmethod evaluate ((i interpreter) (e expr-stmt))
+  (evaluate i (slot-value e 'ast::expression))
+  nil)
+
+(defmethod evaluate ((i interpreter) (e print-stmt))
   (format t "~a~%"
           (stringify
-           (evaluate (slot-value e 'ast::expression))))
+           (evaluate i (slot-value e 'ast::expression))))
   nil)
 
-(defmethod evaluate ((tn ternary))
+(defmethod evaluate ((i interpreter) (tn ternary))
   (with-slots (ast::predicate (te ast::true-expr) (fe ast::false-expr)) tn
-    (let ((p (evaluate ast::predicate)))
-      (if p (evaluate te) (evaluate fe)))))
+    (let ((p (evaluate i ast::predicate)))
+      (if p (evaluate i te) (evaluate i fe)))))
 
-(defmethod evaluate ((b binary))
+(defmethod evaluate ((i interpreter) (b binary))
   (with-slots ((left ast::left) (operator ast::operator) (right ast::right)) b
-    (let ((l (evaluate left))
-          (r (evaluate right)))
+    (let ((l (evaluate i left))
+          (r (evaluate i right)))
       (flet ((op (o)
                (check-number-operands operator l r)
                (funcall o l r)))
@@ -68,9 +74,9 @@
           (:bang-equal (not (equal l r)))
           (otherwise nil))))))
 
-(defmethod evaluate ((u unary))
+(defmethod evaluate ((i interpreter) (u unary))
   (with-slots (ast::right ast::operator) u
-    (let ((expr (evaluate ast::right)))
+    (let ((expr (evaluate i ast::right)))
       (case (token-type ast::operator)
         (:minus
          (check-number-operand ast::operator ast::right)
@@ -78,10 +84,10 @@
         (:bang (not expr))
         (otherwise nil)))))
 
-(defmethod evaluate ((g grouping))
-  (evaluate (slot-value g 'ast::group)))
+(defmethod evaluate ((i interpreter) (g grouping))
+  (evaluate i (slot-value g 'ast::group)))
 
-(defmethod evaluate ((l literal))
+(defmethod evaluate ((i interpreter) (l literal))
   (slot-value l 'ast::value))
 
 (defun stringify (object)
@@ -93,6 +99,6 @@
                                       object)))
         (t (format nil "~a" object))))
 
-(defun interpret (statements)
+(defmethod interpret ((i interpreter) statements)
   (loop for statement in statements
-        do (evaluate statement)))
+        do (evaluate i statement)))

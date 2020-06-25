@@ -20,29 +20,33 @@
         (msg (runtime-error-message e)))
     (report-msg l (token-line tk) "" msg)))
 
-(defmethod run ((l loxl) in)
+(defmethod run ((l loxl) (i interpreter) in)
   (let* ((tokens (scan-tokens (make-instance 'scanner :source in)))
          (parse-tree (parse (make-instance 'parser :tokens tokens))))
     (when parse-tree
-      (interpret parse-tree))))
+      (interpret i parse-tree))))
+
+(defmethod run-with-error-handling ((l loxl) (i interpreter) in)
+  (handler-bind ((parser-error
+                   #'(lambda (e)
+                       (handle-parse-error l e)
+                       (invoke-restart 'sync-after-parse-error))))
+    (handler-case (run l i in)
+      (scanner-error (e) (handle-scanner-error l e))
+      (runtime-error (e) (handle-runtime-error l e)))))
 
 (defmethod run-prompt ((l loxl))
-  (format t "> ")
-  (loop for line = (read-line)
-        do (with-input-from-string (in line)
-             (handler-bind ((parser-error
-                              #'(lambda (e)
-                                  (handle-parse-error l e)
-                                  (invoke-restart 'sync-after-parse-error)))
-                            (scanner-error #'(lambda (e) (handle-scanner-error l e)))
-                            (runtime-error #'(lambda (e) (handle-runtime-error l e))))
-               (run l in))
-             (format t "> "))))
+  (let ((interpreter (make-instance 'interpreter)))
+    (format t "> ")
+    (loop for line = (read-line)
+          do (with-input-from-string (in line)
+               (run-with-error-handling l interpreter in)
+               (format t "> ")))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name)
-    ;; TODO Need error handling here
-    (run l in)))
+    (let ((interpreter (make-instance 'interpreter)))
+      (run-with-error-handling l interpreter in))))
 
 (defun main (&optional args)
   (let ((l (make-instance 'loxl)))
