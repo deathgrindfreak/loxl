@@ -37,6 +37,10 @@
   (literal value)
   (unary (token operator) (expr right)))
 
+(define-ast stmt
+  (expr-stmt (expr expression))
+  (print-stmt (expr expression)))
+
 (defgeneric print-ast (expr)
   (:documentation "Pretty prints the AST"))
 
@@ -62,45 +66,3 @@
 
 (defmethod print-ast ((l literal))
   (or (slot-value l 'value) "nil"))
-
-
-
-
-
-;; (macroexpand-1
-;;  '(define-ast expr
-;;    ((binary (expr left) (token operator) (expr right))
-;;     (grouping (expr expression))
-;;     (literal value)
-;;     (unary (token operator) (expr right)))))
-
-;; (defun make-binary (l op r)
-;;   (make-instance 'binary
-;;                  :operator op
-;;                  :left l
-;;                  :right r))
-
-;; (defun make-unary (op r)
-;;   (make-instance 'unary
-;;                  :operator op
-;;                  :right r))
-
-;; (defun make-literal (v)
-;;   (make-instance 'literal :value v))
-
-;; (defun make-grouping (e)
-;;   (make-instance 'grouping :expression e))
-
-;; (defun make-token (tk type)
-;;   (make-instance 'token
-;;                  :line 1
-;;                  :literal nil
-;;                  :type type
-;;                  :lexeme tk))
-
-;; (print-ast
-;;  (make-binary
-;;   (make-unary (make-token "-" :minus)
-;;               (make-literal 123))
-;;   (make-token "*" :star)
-;;   (make-grouping (make-literal 45.67))))

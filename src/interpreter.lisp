@@ -20,6 +20,16 @@
 (defgeneric evaluate (expr)
   (:documentation "Evaluates an expression"))
 
+(defmethod evaluate ((e expr-stmt))
+  (evaluate (slot-value e 'ast::expression))
+  nil)
+
+(defmethod evaluate ((e print-stmt))
+  (format t "~a~%"
+          (stringify
+           (evaluate (slot-value e 'ast::expression))))
+  nil)
+
 (defmethod evaluate ((tn ternary))
   (with-slots (ast::predicate (te ast::true-expr) (fe ast::false-expr)) tn
     (let ((p (evaluate ast::predicate)))
@@ -83,6 +93,6 @@
                                       object)))
         (t (format nil "~a" object))))
 
-(defmethod interpret ((e expr))
-  (let ((value (evaluate e)))
-    (stringify value)))
+(defun interpret (statements)
+  (loop for statement in statements
+        do (evaluate statement)))

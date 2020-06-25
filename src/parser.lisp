@@ -121,9 +121,21 @@
 (defmethod expression ((p parser))
   (ternary p))
 
-;; (defmethod parse ((p parser))
-;;   (handler-case (expression p)
-;;     (parser-error () nil)))
+(defmethod print-statement ((p parser))
+  (let ((value (expression p)))
+    (consume p :semicolon "Expect ';' after value.")
+    (make-instance 'print-stmt :expression value)))
+
+(defmethod expr-statement ((p parser))
+  (let ((expr (expression p)))
+    (consume p :semicolon "Expect ';' after expression.")
+    (make-instance 'expr-stmt :expression expr)))
+
+(defmethod statement ((p parser))
+  (if (match p :print)
+      (print-statement p)
+      (expr-statement p)))
 
 (defmethod parse ((p parser))
-  (expression p))
+  (loop while (not (is-at-end p))
+        collect (statement p)))

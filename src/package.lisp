@@ -30,6 +30,8 @@
    :util
    :token)
   (:export
+   :expr-stmt
+   :print-stmt
    :expr
    :ternary
    :binary
