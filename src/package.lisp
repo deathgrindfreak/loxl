@@ -31,6 +31,7 @@
    :token)
   (:export
    :assign
+   :block-stmt
    :var-expr
    :var-stmt
    :expr-stmt

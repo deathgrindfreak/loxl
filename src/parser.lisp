@@ -158,10 +158,19 @@
     (consume p :semicolon "Expect ';' after variable declaration.")
     (make-instance 'var-stmt :name name :initializer initializer)))
 
+(defmethod block-statement ((p parser))
+  (let ((statements
+          (loop while (not (or (check p :right-brace)
+                               (is-at-end p)))
+                collect (declaration-stmt p))))
+    (consume p :right-brace "Expect '}' after block.")
+    statements))
+
 (defmethod statement ((p parser))
-  (if (match p :print)
-      (print-statement p)
-      (expr-statement p)))
+  (cond ((match p :print) (print-statement p))
+        ((match p :left-brace) (make-instance 'block-stmt
+                                              :statements (block-statement p)))
+        (t (expr-statement p))))
 
 (defmethod declaration-stmt ((p parser))
   (if (match p :var)

@@ -2,7 +2,7 @@
 
 (defclass interpreter ()
   ((environment :initform (make-instance 'environment)
-                :reader environment)))
+                :accessor environment)))
 
 (defun check-number-operand (operator operand)
   (unless (numberp operand)
@@ -14,6 +14,20 @@
 
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
+
+(defmethod execute-block ((i interpreter) statements env)
+  (let ((previous (environment i)))
+    (unwind-protect
+         (progn
+           (setf (environment i) env)
+           (loop for statement in statements
+                 do (evaluate i statement)))
+      (setf (environment i) previous))))
+
+(defmethod evaluate ((i interpreter) (e block-stmt))
+  (with-slots ((statements ast:statements)) e
+    (execute-block i statements (make-instance 'environment
+                                               :enclosing (environment i)))))
 
 (defmethod evaluate ((i interpreter) (e assign))
   (with-slots ((value ast::value) (name ast::name)) e

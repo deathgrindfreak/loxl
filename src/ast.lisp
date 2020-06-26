@@ -40,6 +40,7 @@
   (var-expr (token name)))
 
 (define-ast stmt
+  (block-stmt statements)
   (var-stmt (token name) (expr initializer))
   (expr-stmt (expr expression))
   (print-stmt (expr expression)))
