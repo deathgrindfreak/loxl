@@ -152,11 +152,16 @@
 
 (defmethod var-declaration ((p parser))
   (let ((name (consume p :identifier "Expect variable name."))
-        (initializer nil))
+        (was-initialized)
+        (initializer))
     (when (match p :equal)
-      (setf initializer (expression p)))
+      (setf initializer (expression p)
+            was-initialized t))
     (consume p :semicolon "Expect ';' after variable declaration.")
-    (make-instance 'var-stmt :name name :initializer initializer)))
+    (make-instance 'var-stmt
+                   :name name
+                   :was-initialized was-initialized
+                   :initializer initializer)))
 
 (defmethod block-statement ((p parser))
   (let ((statements

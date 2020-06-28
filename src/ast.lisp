@@ -41,7 +41,7 @@
 
 (define-ast stmt
   (block-stmt statements)
-  (var-stmt (token name) (expr initializer))
+  (var-stmt (token name) (expr initializer) (boolean was-initialized))
   (expr-stmt (expr expression))
   (print-stmt (expr expression)))
 

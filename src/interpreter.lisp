@@ -39,11 +39,14 @@
   (resolve (environment i) (slot-value e 'ast::name)))
 
 (defmethod evaluate ((i interpreter) (e var-stmt))
-  (with-slots ((name ast::name) (init ast::initializer)) e
+  (with-slots ((name ast::name)
+               (init ast::initializer)
+               (was-initialized ast::was-initialized))
+      e
     (let ((value))
       (when init
         (setf value (evaluate i init)))
-      (define (environment i) (lexeme name) value)))
+      (define (environment i) (lexeme name) value was-initialized)))
   nil)
 
 (defmethod evaluate ((i interpreter) (e expr-stmt))
