@@ -25,7 +25,7 @@
       (setf (environment i) previous))))
 
 (defmethod evaluate ((i interpreter) (e block-stmt))
-  (with-slots ((statements ast:statements)) e
+  (with-slots ((statements ast::statements)) e
     (execute-block i statements (make-instance 'environment
                                                :enclosing (environment i)))))
 
