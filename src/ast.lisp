@@ -41,6 +41,7 @@
   (var-expr (token name)))
 
 (define-ast stmt
+  (while-stmt (expr condition) (stmt body))
   (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
   (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))

@@ -190,7 +190,7 @@
 (defmethod if-statement ((p parser))
   (consume p :left-paren "Expect '(' after 'if'.")
   (let ((condition (expression p)))
-    (consume p :right-paren "Expect ')' after 'if'.")
+    (consume p :right-paren "Expect ')' after 'condition'.")
     (let ((then-branch (statement p))
           (else-branch))
       (when (match p :else)
@@ -200,8 +200,17 @@
                      :then-branch then-branch
                      :else-branch else-branch))))
 
+(defmethod while-statement ((p parser))
+  (consume p :left-paren "Expect '(' after 'while'.")
+  (let ((condition (expression p)))
+    (consume p :right-paren "Expect ')' after 'condition'.")
+    (make-instance 'while-stmt
+                   :condition condition
+                   :body (statement p))))
+
 (defmethod statement ((p parser))
-  (cond ((match p :if) (if-statement p))
+  (cond ((match p :while) (while-statement p))
+        ((match p :if) (if-statement p))
         ((match p :print) (print-statement p))
         ((match p :left-brace)
          (make-instance 'block-stmt

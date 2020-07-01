@@ -31,6 +31,7 @@
    :token)
   (:export
    :logical
+   :while-stmt
    :if-stmt
    :assign
    :block-stmt

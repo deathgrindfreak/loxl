@@ -70,6 +70,12 @@
            (evaluate i (slot-value e 'ast::expression))))
   nil)
 
+(defmethod evaluate ((i interpreter) (s while-stmt))
+  (with-slots ((condition ast::condition) (body ast::body)) s
+    (loop while (evaluate i condition)
+          do (evaluate i body)))
+  nil)
+
 (defmethod evaluate ((i interpreter) (expr logical))
   (with-slots ((left ast::left) (op ast::operator) (right ast::right)) expr
     (let ((left (evaluate i left)))
