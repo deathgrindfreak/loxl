@@ -30,6 +30,7 @@
    :util
    :token)
   (:export
+   :logical
    :if-stmt
    :assign
    :block-stmt

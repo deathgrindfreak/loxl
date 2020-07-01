@@ -78,37 +78,52 @@
 
 (defmacro define-binary-parser (name &body body)
   (with-gensyms (p expr operator right)
-    (let ((subexpr (getf body :operand))
+    (let ((class-name (getf body :class))
+          (subexpr (getf body :operand))
           (tokens (getf body :operators)))
       `(defmethod ,name ((,p parser))
          (let ((,expr (,subexpr ,p)))
            (loop while (match ,p ,@tokens)
                  do (let ((,operator (previous ,p))
                           (,right (,subexpr ,p)))
-                      (setf ,expr (make-instance 'binary
+                      (setf ,expr (make-instance ',class-name
                                                  :left ,expr
                                                  :operator ,operator
                                                  :right ,right)))
                  finally (return ,expr)))))))
 
 (define-binary-parser multiplication
+  :class binary
   :operand unary
   :operators (:slash :star))
 
 (define-binary-parser addition
+  :class binary
   :operand multiplication
   :operators (:minus :plus))
 
 (define-binary-parser comparison
+  :class binary
   :operand addition
   :operators (:greater :greater-equal :less :less-equal))
 
 (define-binary-parser equality
+  :class binary
   :operand comparison
   :operators (:bang-equal :equal-equal))
 
+(define-binary-parser and-expr
+  :class logical
+  :operand equality
+  :operators (:and))
+
+(define-binary-parser or-expr
+  :class logical
+  :operand and-expr
+  :operators (:or))
+
 (defmethod ternary ((p parser))
-  (let ((expr (equality p)))
+  (let ((expr (or-expr p)))
     (when (match p :question)
       (let ((true-expr (ternary p)))
         (unless (match p :colon)
@@ -134,6 +149,7 @@
         expr)))
 
 (define-binary-parser comma
+  :class binary
   :operand assignment
   :operators (:comma))
 

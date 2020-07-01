@@ -70,6 +70,13 @@
            (evaluate i (slot-value e 'ast::expression))))
   nil)
 
+(defmethod evaluate ((i interpreter) (expr logical))
+  (with-slots ((left ast::left) (op ast::operator) (right ast::right)) expr
+    (let ((left (evaluate i left)))
+      (cond ((and (eq :or (token-type op)) left) left)
+            ((and (eq :and (token-type op)) (not left)) left)
+            (t (evaluate i right))))))
+
 (defmethod evaluate ((i interpreter) (tn ternary))
   (with-slots (ast::predicate (te ast::true-expr) (fe ast::false-expr)) tn
     (let ((p (evaluate i ast::predicate)))
