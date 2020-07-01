@@ -171,10 +171,25 @@
     (consume p :right-brace "Expect '}' after block.")
     statements))
 
+(defmethod if-statement ((p parser))
+  (consume p :left-paren "Expect '(' after 'if'.")
+  (let ((condition (expression p)))
+    (consume p :right-paren "Expect ')' after 'if'.")
+    (let ((then-branch (statement p))
+          (else-branch))
+      (when (match p :else)
+        (setf else-branch (statement p)))
+      (make-instance 'if-stmt
+                     :condition condition
+                     :then-branch then-branch
+                     :else-branch else-branch))))
+
 (defmethod statement ((p parser))
-  (cond ((match p :print) (print-statement p))
-        ((match p :left-brace) (make-instance 'block-stmt
-                                              :statements (block-statement p)))
+  (cond ((match p :if) (if-statement p))
+        ((match p :print) (print-statement p))
+        ((match p :left-brace)
+         (make-instance 'block-stmt
+                        :statements (block-statement p)))
         (t (expr-statement p))))
 
 (defmethod declaration-stmt ((p parser))

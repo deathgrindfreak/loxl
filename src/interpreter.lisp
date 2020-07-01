@@ -15,6 +15,17 @@
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
 
+(defmethod evaluate ((i interpreter) (stmt if-stmt))
+  (with-slots ((condition ast::condition)
+               (thenbr ast::then-branch)
+               (elsebr ast::else-branch))
+      stmt
+    (if (evaluate i condition)
+        (evaluate i thenbr)
+        (when elsebr
+          (evaluate i elsebr))))
+  nil)
+
 (defmethod execute-block ((i interpreter) statements env)
   (let ((previous (environment i)))
     (unwind-protect
@@ -38,11 +49,11 @@
 (defmethod evaluate ((i interpreter) (e var-expr))
   (resolve (environment i) (slot-value e 'ast::name)))
 
-(defmethod evaluate ((i interpreter) (e var-stmt))
+(defmethod evaluate ((i interpreter) (stmt var-stmt))
   (with-slots ((name ast::name)
                (init ast::initializer)
                (was-initialized ast::was-initialized))
-      e
+      stmt
     (let ((value))
       (when init
         (setf value (evaluate i init)))

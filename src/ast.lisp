@@ -40,7 +40,8 @@
   (var-expr (token name)))
 
 (define-ast stmt
-  (block-stmt statements)
+  (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
+  (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))
   (expr-stmt (expr expression))
   (print-stmt (expr expression)))
