@@ -208,8 +208,49 @@
                    :condition condition
                    :body (statement p))))
 
+(defmethod for-statement ((p parser))
+  (consume p :left-paren "Expect '(' after 'for'.")
+  (let ((initializer (cond ((match p :semicolon) nil)
+                           ((match p :var) (var-declaration p))
+                           (t (expr-statement p))))
+        (condition (when (not (check p :semicolon))
+                     (expression p))))
+    (consume p :semicolon "Expect ';' after loop condition.")
+    (let ((increment (when (not (check p :right-paren))
+                       (expression p))))
+      (consume p :right-paren "Expect ')' after for clauses.")
+      (let ((body (statement p)))
+        ;; When increment exists, append increment to the end of the body
+        (when increment
+          (setf body
+                (make-instance
+                 'block-stmt
+                 :statements (list
+                              body
+                              (make-instance
+                               'expr-stmt
+                               :expression increment)))))
+
+        ;; Ensure that condition will evaluate to true always if missing
+        (when (null condition)
+          (setf condition (make-instance 'literal :value t)))
+
+        ;; Wrap body in a while statement
+        (setf body (make-instance 'while-stmt
+                                  :condition condition
+                                  :body body))
+
+        ;; Append initializer before while loop if it exists
+        (when initializer
+          (setf body
+                (make-instance
+                 'block-stmt
+                 :statements (list initializer body))))
+        body))))
+
 (defmethod statement ((p parser))
   (cond ((match p :while) (while-statement p))
+        ((match p :for) (for-statement p))
         ((match p :if) (if-statement p))
         ((match p :print) (print-statement p))
         ((match p :left-brace)
