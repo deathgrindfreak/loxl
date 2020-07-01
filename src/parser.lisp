@@ -182,13 +182,25 @@
       (var-declaration p)
       (statement p)))
 
+(defmethod parse-statement ((p parser))
+  ;; Save the current position in case we need to revert
+  (let ((current-position (slot-value p 'current)))
+    (restart-case (declaration-stmt p)
+      ;; Can't parse anymore, sync and print out errors
+      (sync-after-parse-error ()
+        (setf (slot-value p 'had-parse-error) t)
+        (synchronize p))
+
+      ;; Error happened at the end, so perhaps user can continue adding input
+      (restart-with-new-line (new-tokens)
+        (with-slots (tokens current) p
+          (vector-pop tokens) ; remove the last eof token
+          (setf current current-position)
+          (loop for token across new-tokens
+                do (vector-push-extend token tokens))
+          (parse-statement p))))))
+
 (defmethod parse ((p parser))
-  (let ((stmts
-          (loop while (not (is-at-end p))
-                collect (restart-case (declaration-stmt p)
-                          ;; TODO May need to discern between panic and non-panic mode
-                          (sync-after-parse-error ()
-                            (progn
-                              (setf (slot-value p 'had-parse-error) t)
-                              (synchronize p)))))))
+  (let ((stmts (loop while (not (is-at-end p))
+                     collect (parse-statement p))))
     (unless (had-error p) stmts)))

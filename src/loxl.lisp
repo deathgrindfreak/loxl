@@ -27,26 +27,36 @@
       (interpret i parse-tree))))
 
 (defmethod run-with-error-handling ((l loxl) (i interpreter) in)
-  (handler-bind ((parser-error
-                   #'(lambda (e)
-                       (handle-parse-error l e)
-                       (invoke-restart 'sync-after-parse-error))))
-    (handler-case (run l i in)
-      (scanner-error (e) (handle-scanner-error l e))
-      (runtime-error (e) (handle-runtime-error l e)))))
+  (handler-case (run l i in)
+    (scanner-error (e) (handle-scanner-error l e))
+    (runtime-error (e) (handle-runtime-error l e))))
 
 (defmethod run-prompt ((l loxl))
   (let ((interpreter (make-instance 'interpreter)))
-    (format t "> ")
-    (loop for line = (read-line)
-          do (with-input-from-string (in line)
-               (run-with-error-handling l interpreter in)
-               (format t "> ")))))
+    (loop do
+      (progn
+        (format t "> ")
+        (with-input-from-string (in (read-line))
+          (handler-bind
+              ((parser-error
+                 #'(lambda (e)
+                     (if (eq :eof (token-type (error-token e)))
+                         (invoke-restart 'restart-with-new-line
+                                         (with-input-from-string (in (read-line))
+                                           (scan-tokens (make-instance 'scanner :source in))))
+                         (progn
+                           (handle-parse-error l e)
+                           (invoke-restart 'sync-after-parse-error))))))
+            (run-with-error-handling l interpreter in))))))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name)
     (let ((interpreter (make-instance 'interpreter)))
-      (run-with-error-handling l interpreter in))))
+      (handler-bind ((parser-error
+                       #'(lambda (e)
+                           (handle-parse-error l e)
+                           (invoke-restart 'sync-after-parse-error))))
+        (run-with-error-handling l interpreter in)))))
 
 (defun main (&optional args)
   (let ((l (make-instance 'loxl)))

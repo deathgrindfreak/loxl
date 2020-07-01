@@ -70,6 +70,7 @@
    :parser-error
    :error-token
    :sync-after-parse-error
+   :restart-with-new-line
    :parser-error-message))
 
 (defpackage :interpreter
