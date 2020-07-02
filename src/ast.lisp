@@ -42,6 +42,7 @@
 
 (define-ast stmt
   (while-stmt (expr condition) (stmt body))
+  (loop-keyword-stmt (token keyword))
   (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
   (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))
@@ -52,9 +53,49 @@
   (:documentation "Pretty prints the AST"))
 
 (defun parenthesize (name &rest args)
-  (format nil "(~a ~{~a~^ ~})"
-          name
-          (mapcar #'print-ast args)))
+  (if args
+      (format nil "(~a ~{~a~^ ~})"
+              name
+              (mapcar #'print-ast args))
+      name))
+
+(defmethod print-ast ((s loop-keyword-stmt))
+  (with-slots (keyword) s
+    (parenthesize (lexeme keyword))))
+
+(defmethod print-ast ((s if-stmt))
+  (with-slots (condition then-branch else-branch) s
+    (if else-branch
+        (parenthesize "if" condition then-branch else-branch)
+        (parenthesize "if" condition then-branch))))
+
+(defmethod print-ast ((s assign))
+  (with-slots (name value) s
+    (parenthesize (lexeme name) value)))
+
+(defmethod print-ast ((s expr-stmt))
+  (with-slots (expression) s
+    (parenthesize "expr" expression)))
+
+(defmethod print-ast ((s var-expr))
+  (with-slots (name) s
+    (parenthesize (lexeme name))))
+
+(defmethod print-ast ((s var-stmt))
+  (with-slots (name initializer) s
+    (parenthesize (lexeme name) initializer)))
+
+(defmethod print-ast ((s block-stmt))
+  (with-slots (statements) s
+    (apply #'parenthesize "block" statements)))
+
+(defmethod print-ast ((s while-stmt))
+  (with-slots (condition body) s
+    (parenthesize "while" condition body)))
+
+(defmethod print-ast ((s print-stmt))
+  (with-slots (expression) s
+    (parenthesize "print" expression)))
 
 (defmethod print-ast ((b ternary))
   (with-slots (predicate true-expr false-expr) b
