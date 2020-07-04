@@ -31,23 +31,31 @@
     (scanner-error (e) (handle-scanner-error l e))
     (runtime-error (e) (handle-runtime-error l e))))
 
+(defun indent-line (current-indent)
+  (loop repeat current-indent do (princ "..")
+        finally (princ ". ")))
+
+(defmethod restart-with-new-line ((l loxl) e)
+  (indent-line (open-blocks e))
+  (with-input-from-string (in (read-line))
+    (handler-case (scan-tokens (make-instance 'scanner :source in))
+      (scanner-error (e) (handle-scanner-error l e)))))
+
+(defmethod parser-restarts ((l loxl) e)
+  (if (eq :eof (token-type (error-token e)))
+      (invoke-restart 'restart-with-new-line
+                      (restart-with-new-line l e))
+      (progn
+        (handle-parse-error l e)
+        (invoke-restart 'sync-after-parse-error))))
+
 (defmethod run-prompt ((l loxl))
   (let ((interpreter (make-instance 'interpreter)))
     (loop do
-      (progn
-        (format t "> ")
-        (with-input-from-string (in (read-line))
-          (handler-bind
-              ((parser-error
-                 #'(lambda (e)
-                     (if (eq :eof (token-type (error-token e)))
-                         (invoke-restart 'restart-with-new-line
-                                         (with-input-from-string (in (read-line))
-                                           (scan-tokens (make-instance 'scanner :source in))))
-                         (progn
-                           (handle-parse-error l e)
-                           (invoke-restart 'sync-after-parse-error))))))
-            (run-with-error-handling l interpreter in))))))))
+      (format t "> ")
+      (with-input-from-string (in (read-line))
+        (handler-bind ((parser-error #'(lambda (e) (parser-restarts l e))))
+          (run-with-error-handling l interpreter in))))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name)

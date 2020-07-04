@@ -73,6 +73,7 @@
    :parser
    :parser-error
    :error-token
+   :open-blocks
    :sync-after-parse-error
    :restart-with-new-line
    :parser-error-message))

@@ -7,10 +7,23 @@
 
 (define-condition parser-error (error)
   ((token :initarg :token :reader error-token)
-   (message :initarg :message :reader parser-error-message)))
+   (message :initarg :message :reader parser-error-message)
+   (open-blocks :initarg :open-blocks :reader open-blocks)))
 
+;; We could discern between a parser and repl parser in order to not count blocks
 (defmethod throw-parser-error ((p parser) message)
-  (error 'parser-error :token (peek p) :message message))
+  (with-slots (tokens) p
+    (error 'parser-error :token (peek p)
+                         :message message
+                         :open-blocks (reduce (lambda (c tk)
+                                                (let ((type (token-type tk)))
+                                                  (+ c
+                                                     (case type
+                                                       (:left-brace 1)
+                                                       (:right-brace -1)
+                                                       (otherwise 0)))))
+                                              tokens
+                                              :initial-value 0))))
 
 (defmethod had-error ((p parser))
   (slot-value p 'had-parse-error))
