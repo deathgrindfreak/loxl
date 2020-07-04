@@ -11,6 +11,7 @@ Right now, I haven't created a way to generate an executable, but loading the sy
 * String coercion during concatenation
 * Comma and Ternary operators
 * Accessing non-initialized variables throws an error
+* Break keyword for while/for loops
 
 ## Misc Additions
 * Repl can handle multi-line input from the user

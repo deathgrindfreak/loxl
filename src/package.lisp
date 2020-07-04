@@ -32,6 +32,7 @@
   (:export
    :logical
    :while-stmt
+   :loop-keyword-stmt
    :if-stmt
    :assign
    :block-stmt

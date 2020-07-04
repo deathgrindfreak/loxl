@@ -248,9 +248,15 @@
                  :statements (list initializer body))))
         body))))
 
+(defmethod break-statement ((p parser))
+  (let ((keyword (previous p)))
+    (consume p :semicolon "Expect ';' after break statement.")
+    (make-instance 'loop-keyword-stmt :keyword keyword)))
+
 (defmethod statement ((p parser))
   (cond ((match p :while) (while-statement p))
         ((match p :for) (for-statement p))
+        ((match p :break) (break-statement p))
         ((match p :if) (if-statement p))
         ((match p :print) (print-statement p))
         ((match p :left-brace)

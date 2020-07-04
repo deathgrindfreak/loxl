@@ -2,7 +2,9 @@
 
 (defclass interpreter ()
   ((environment :initform (make-instance 'environment)
-                :accessor environment)))
+                :accessor environment)
+   (loop-count :initform 0 :accessor loop-count)
+   (is-breaking :initform nil :accessor is-breaking)))
 
 (defun check-number-operand (operator operand)
   (unless (numberp operand)
@@ -11,6 +13,12 @@
 (defun check-number-operands (operator left right)
   (unless (and (numberp left) (numberp right))
     (throw-runtime-error operator "Operands must be a numbers.")))
+
+(defmethod perform-break ((i interpreter))
+  (when (is-breaking i)
+      (progn
+        (setf (is-breaking i) nil)
+        t)))
 
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
@@ -26,19 +34,40 @@
           (evaluate i elsebr))))
   nil)
 
+(defmethod evaluate ((i interpreter) (stmt loop-keyword-stmt))
+  (with-slots ((keyword ast::keyword)) stmt
+    (when (zerop (loop-count i))
+      (throw-runtime-error keyword "Break statement found outside of loop."))
+    keyword))
+
+(defmethod evaluate ((i interpreter) (s while-stmt))
+  (incf (loop-count i))
+  (unwind-protect
+       (with-slots ((condition ast::condition) (body ast::body)) s
+         (loop while (evaluate i condition)
+               do (if (perform-break i)
+                      (return)
+                      (evaluate i body))))
+    (decf (loop-count i)))
+  nil)
+
 (defmethod execute-block ((i interpreter) statements env)
   (let ((previous (environment i)))
     (unwind-protect
          (progn
            (setf (environment i) env)
            (loop for statement in statements
-                 do (evaluate i statement)))
+                 do (let ((stmt (evaluate i statement)))
+                      (when (and stmt (eq :break (token-type stmt)))
+                        (setf (is-breaking i) t)
+                        (return)))))
       (setf (environment i) previous))))
 
 (defmethod evaluate ((i interpreter) (e block-stmt))
   (with-slots ((statements ast::statements)) e
     (execute-block i statements (make-instance 'environment
-                                               :enclosing (environment i)))))
+                                               :enclosing (environment i)))
+    nil))
 
 (defmethod evaluate ((i interpreter) (e assign))
   (with-slots ((value ast::value) (name ast::name)) e
@@ -68,12 +97,6 @@
   (format t "~a~%"
           (stringify
            (evaluate i (slot-value e 'ast::expression))))
-  nil)
-
-(defmethod evaluate ((i interpreter) (s while-stmt))
-  (with-slots ((condition ast::condition) (body ast::body)) s
-    (loop while (evaluate i condition)
-          do (evaluate i body)))
   nil)
 
 (defmethod evaluate ((i interpreter) (expr logical))
