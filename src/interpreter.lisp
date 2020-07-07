@@ -1,10 +1,15 @@
 (in-package :interpreter)
 
 (defclass interpreter ()
-  ((environment :initform (make-instance 'environment)
-                :accessor environment)
+  ((globals :initform (make-instance 'environment)
+                :accessor globals)
+   (environment :accessor environment)
    (loop-count :initform 0 :accessor loop-count)
    (is-breaking :initform nil :accessor is-breaking)))
+
+(defmethod initialize-instance :after ((i interpreter) &rest args)
+  (setf (environment i) (globals i))
+  (define (globals i) "clock" (make-instance 'clock) t))
 
 (defun check-number-operand (operator operand)
   (unless (numberp operand)
@@ -22,6 +27,31 @@
 
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
+
+
+(defmethod evaluate ((i interpreter) (stmt fun-stmt))
+  (with-slots ((name ast::name)) stmt
+    (let ((function (make-instance 'lox-function
+                                   :declaration stmt)))
+      (define (environment i) (lexeme name) function t)
+      nil)))
+
+(defmethod evaluate ((i interpreter) (expr call))
+  (with-slots ((callee ast::callee)
+               (paren ast::paren)
+               (args ast::arguments))
+      expr
+    (let ((f (evaluate i callee)))
+      (unless (subtypep (type-of f) 'lox-callable)
+        (throw-runtime-error
+         paren
+         "Can only call functions and classes."))
+      (unless (= (arity f) (length args))
+        (throw-runtime-error
+         paren
+         (format nil "Expected ~a arguments but got ~a." (arity f) (length args))))
+      (call-fun f i (loop for arg in args
+                          collect (evaluate i arg))))))
 
 (defmethod evaluate ((i interpreter) (stmt if-stmt))
   (with-slots ((condition ast::condition)

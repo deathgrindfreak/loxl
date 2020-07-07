@@ -35,6 +35,7 @@
   (logical (expr left) (token operator) (expr right))
   (ternary (expr predicate) (expr true-expr) (expr false-expr))
   (binary (expr left) (token operator) (expr right))
+  (call (expr callee) (token paren) (cons arguments))
   (grouping (expr group))
   (literal value)
   (unary (token operator) (expr right))
@@ -43,6 +44,7 @@
 (define-ast stmt
   (while-stmt (expr condition) (stmt body))
   (loop-keyword-stmt (token keyword))
+  (fun-stmt (token name) (cons params) (cons body))
   (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
   (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))
@@ -58,6 +60,10 @@
               name
               (mapcar #'print-ast args))
       name))
+
+(defmethod print-ast ((e call))
+  (with-slots (callee arguments) e
+    (apply #'parenthesize (print-ast callee) arguments)))
 
 (defmethod print-ast ((s loop-keyword-stmt))
   (with-slots (keyword) s
@@ -75,7 +81,7 @@
 
 (defmethod print-ast ((s expr-stmt))
   (with-slots (expression) s
-    (parenthesize "expr" expression)))
+    (print-ast expression)))
 
 (defmethod print-ast ((s var-expr))
   (with-slots (name) s

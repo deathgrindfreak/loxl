@@ -30,6 +30,8 @@
    :util
    :token)
   (:export
+   :call
+   :fun-stmt
    :logical
    :while-stmt
    :loop-keyword-stmt

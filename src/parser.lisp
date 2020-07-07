@@ -10,7 +10,7 @@
    (message :initarg :message :reader parser-error-message)
    (open-blocks :initarg :open-blocks :reader open-blocks)))
 
-;; We could discern between a parser and repl parser in order to not count blocks
+;; TODO We could discern between a parser and repl parser in order to not count blocks
 (defmethod throw-parser-error ((p parser) message)
   (with-slots (tokens) p
     (error 'parser-error :token (peek p)
@@ -82,12 +82,30 @@
     ((match p :identifier) (make-instance 'var-expr :name (previous p)))
     (t (throw-parser-error p "Expect expression."))))
 
+(defmethod finish-call ((p parser) callee)
+  (let ((arguments (unless (check p :right-paren)
+                     (loop for total-arguments = 0 then (1+ total-arguments)
+                           collect (assignment p)
+                           do (when (>= total-arguments 255)
+                                (throw-parser-error p "Cannot have more than 255 arguments."))
+                           while (match p :comma)))))
+    (make-instance 'call :callee callee
+                         :paren (consume p :right-paren "Expect ')' after arguments.")
+                         :arguments arguments)))
+
+(defmethod call ((p parser))
+  (let ((expr (primary p)))
+    (loop do
+      (if (match p :left-paren)
+          (setf expr (finish-call p expr))
+          (return expr)))))
+
 (defmethod unary ((p parser))
   (if (match p :bang :minus)
       (make-instance 'unary
                      :operator (previous p)
                      :right (unary p))
-      (primary p)))
+      (call p)))
 
 (defmacro define-binary-parser (name &body body)
   (with-gensyms (p expr operator right)
@@ -178,6 +196,24 @@
   (let ((expr (expression p)))
     (consume p :semicolon "Expect ';' after expression.")
     (make-instance 'expr-stmt :expression expr)))
+
+
+(defmethod fun-declaration ((p parser) kind)
+  (let ((name (consume p :identifier
+                       (format nil "Expect ~a name." kind))))
+    (consume p :left-paren (format nil "Expect '(' after ~a name." kind))
+    (let ((parameters (unless (check p :right-paren)
+                        (loop for param-count = 0 then (1+ param-count)
+                              when (>= param-count 255)
+                                do (throw-parser-error p "Cannot have more than 255 parameters.")
+                              collect (consume p :identifier "Expect parameter name.")
+                              while (match p :comma)))))
+      (consume p :right-paren "Expect ')' after ~a parameters.")
+      (consume p :left-brace (format nil "Expect '{' before ~a body." kind))
+      (make-instance 'fun-stmt
+                     :name name
+                     :params parameters
+                     :body (block-statement p)))))
 
 (defmethod var-declaration ((p parser))
   (let ((name (consume p :identifier "Expect variable name."))
@@ -278,9 +314,9 @@
         (t (expr-statement p))))
 
 (defmethod declaration-stmt ((p parser))
-  (if (match p :var)
-      (var-declaration p)
-      (statement p)))
+  (cond ((match p :fun) (fun-declaration p "function"))
+        ((match p :var) (var-declaration p))
+        (t (statement p))))
 
 (defmethod parse-statement ((p parser))
   ;; Save the current position in case we need to revert
