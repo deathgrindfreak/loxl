@@ -18,6 +18,6 @@
                (:file "parser")
                (:file "runtime-error")
                (:file "environment")
-               (:file "lox-callable")
                (:file "interpreter")
+               (:file "lox-callable")
                (:file "loxl")))
