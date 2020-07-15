@@ -32,6 +32,7 @@
   (:export
    :call
    :fun-stmt
+   :return-stmt
    :logical
    :while-stmt
    :loop-keyword-stmt

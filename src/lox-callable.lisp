@@ -20,7 +20,9 @@
       (loop for param in params
             for arg in arguments
             do (define env (lexeme param) arg t))
-      (execute-block i body env))))
+      (handler-bind ((return-condition #'(lambda (c)
+                                           (return-from call-fun (return-value c)))))
+        (execute-block i body env)))))
 
 ;; Native clock function
 (defclass clock (lox-callable) ())

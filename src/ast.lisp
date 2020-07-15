@@ -45,6 +45,7 @@
   (while-stmt (expr condition) (stmt body))
   (loop-keyword-stmt (token keyword))
   (fun-stmt (token name) (cons params) (cons body))
+  (return-stmt (token keyword) (expr value))
   (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
   (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))

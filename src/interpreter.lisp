@@ -28,6 +28,14 @@
 (defgeneric evaluate (interpreter expr)
   (:documentation "Evaluates an expression"))
 
+(define-condition return-condition (condition)
+  ((value :initarg :value :reader return-value)))
+
+(defmethod evaluate ((i interpreter) (stmt return-stmt))
+  (with-slots ((stmt-value ast::value)) stmt
+    (signal 'return-condition
+            :value (when stmt-value
+                     (evaluate i stmt-value)))))
 
 (defmethod evaluate ((i interpreter) (stmt fun-stmt))
   (with-slots ((name ast::name)) stmt

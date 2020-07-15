@@ -219,7 +219,7 @@
   (let ((name (consume p :identifier "Expect variable name."))
         (was-initialized)
         (initializer))
-    (when (match p :equal)
+   (when (match p :equal)
       (setf initializer (expression p)
             was-initialized t))
     (consume p :semicolon "Expect ';' after variable declaration.")
@@ -302,12 +302,23 @@
     (consume p :semicolon "Expect ';' after break statement.")
     (make-instance 'loop-keyword-stmt :keyword keyword)))
 
+(defmethod return-statement ((p parser))
+  (let ((keyword (previous p))
+        (value))
+    (unless (check p :semicolon)
+      (setf value (expression p)))
+    (consume p :semicolon "Expect ';' after return value.")
+    (make-instance 'return-stmt
+                   :keyword keyword
+                   :value value)))
+
 (defmethod statement ((p parser))
   (cond ((match p :while) (while-statement p))
         ((match p :for) (for-statement p))
         ((match p :break) (break-statement p))
         ((match p :if) (if-statement p))
         ((match p :print) (print-statement p))
+        ((match p :return) (return-statement p))
         ((match p :left-brace)
          (make-instance 'block-stmt
                         :statements (block-statement p)))
