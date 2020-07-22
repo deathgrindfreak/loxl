@@ -40,7 +40,8 @@
 (defmethod evaluate ((i interpreter) (stmt fun-stmt))
   (with-slots ((name ast::name)) stmt
     (let ((function (make-instance 'lox-function
-                                   :declaration stmt)))
+                                   :declaration stmt
+                                   :closure (environment i))))
       (define (environment i) (lexeme name) function t)
       nil)))
 

@@ -8,14 +8,16 @@
 
 (defclass lox-function (lox-callable)
   ((declaration :initarg :declaration
-                :reader fn-declaration)))
+                :reader fn-declaration)
+   (closure :initarg :closure
+            :reader closure)))
 
 (defmethod arity ((l lox-function))
   (with-slots ((params ast::params)) (fn-declaration l)
     (length params)))
 
 (defmethod call-fun ((l lox-function) (i interpreter) arguments)
-  (let ((env (make-instance 'environment :enclosing (globals i))))
+  (let ((env (make-instance 'environment :enclosing (closure l))))
     (with-slots ((params ast::params) (body ast::body)) (fn-declaration l)
       (loop for param in params
             for arg in arguments
