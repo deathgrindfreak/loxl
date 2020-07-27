@@ -3,27 +3,35 @@
 (defclass parser ()
   ((tokens :initarg :tokens)
    (current :initform 0)
-   (had-parse-error :initform nil)))
+   (had-parse-error :initform nil)
+   (in-restart :initform nil)))
 
 (define-condition parser-error (error)
   ((token :initarg :token :reader error-token)
    (message :initarg :message :reader parser-error-message)
+   (parsed-expr :initarg :parsed-expr :reader parsed-expr)
+   (had-parse-error :initarg :had-parse-error :reader had-parse-error)
+   (in-restart :initarg :in-restart :reader in-restart)
    (open-blocks :initarg :open-blocks :reader open-blocks)))
 
 ;; TODO We could discern between a parser and repl parser in order to not count blocks
-(defmethod throw-parser-error ((p parser) message)
-  (with-slots (tokens) p
-    (error 'parser-error :token (peek p)
-                         :message message
-                         :open-blocks (reduce (lambda (c tk)
-                                                (let ((type (token-type tk)))
-                                                  (+ c
-                                                     (case type
-                                                       (:left-brace 1)
-                                                       (:right-brace -1)
-                                                       (otherwise 0)))))
-                                              tokens
-                                              :initial-value 0))))
+(defmethod throw-parser-error ((p parser) message &optional parsed-expr)
+  (with-slots (tokens had-parse-error in-restart) p
+    (error 'parser-error
+           :token (peek p)
+           :message message
+           :parsed-expr parsed-expr
+           :had-parse-error had-parse-error
+           :in-restart in-restart
+           :open-blocks (reduce (lambda (c tk)
+                                  (let ((type (token-type tk)))
+                                    (+ c
+                                       (case type
+                                         (:left-brace 1)
+                                         (:right-brace -1)
+                                         (otherwise 0)))))
+                                tokens
+                                :initial-value 0))))
 
 (defmethod had-error ((p parser))
   (slot-value p 'had-parse-error))
@@ -53,10 +61,10 @@
                   types)
        (advance p)))
 
-(defmethod consume ((p parser) type message)
+(defmethod consume ((p parser) type message &optional parsed-expr)
   (if (check p type)
       (advance p)
-      (throw-parser-error p message)))
+      (throw-parser-error p message parsed-expr)))
 
 (defmethod synchronize ((p parser))
   (advance p)
@@ -194,9 +202,8 @@
 
 (defmethod expr-statement ((p parser))
   (let ((expr (expression p)))
-    (consume p :semicolon "Expect ';' after expression.")
+    (consume p :semicolon "Expect ';' after expression." expr)
     (make-instance 'expr-stmt :expression expr)))
-
 
 (defmethod fun-declaration ((p parser) kind)
   (let ((name (consume p :identifier
@@ -274,11 +281,10 @@
           (setf body
                 (make-instance
                  'block-stmt
-                 :statements (list
-                              body
-                              (make-instance
-                               'expr-stmt
-                               :expression increment)))))
+                 :statements (list body
+                                   (make-instance
+                                    'expr-stmt
+                                    :expression increment)))))
 
         ;; Ensure that condition will evaluate to true always if missing
         (when (null condition)
@@ -332,7 +338,11 @@
 (defmethod parse-statement ((p parser))
   ;; Save the current position in case we need to revert
   (let ((current-position (slot-value p 'current)))
-    (restart-case (declaration-stmt p)
+    (restart-case (let ((stmt (declaration-stmt p)))
+                    ;; We need to know if we've parsed a statement
+                    ;; when interpreting pure expressions in the repl
+                    (setf (slot-value p 'in-restart) t)
+                    stmt)
       ;; Can't parse anymore, sync and print out errors
       (sync-after-parse-error ()
         (setf (slot-value p 'had-parse-error) t)
@@ -341,10 +351,47 @@
       ;; Error happened at the end, so perhaps user can continue adding input
       (restart-with-new-line (new-tokens)
         (with-slots (tokens current) p
+          ;; We need to know if we're in a restart when interpreting pure expressions in the repl
+          (setf (slot-value p 'in-restart) t)
           (vector-pop tokens) ; remove the last eof token
           (setf current current-position)
           (loop for token across new-tokens
                 do (vector-push-extend token tokens))
+          (parse-statement p)))
+
+      ;; When a pure expression is parsed, turn it into a print statement
+      (restart-with-implicit-stmt ()
+        (with-slots (tokens current) p
+          (setf current current-position)
+          (vector-pop tokens) ; remove the last eof token
+          (setf tokens
+               (let ((print-token
+                       (make-instance 'token
+                                      :line 1
+                                      :type :print
+                                      :literal :print
+                                      :lexeme "print"))
+                     (semicolon-token
+                       (make-instance 'token
+                                      :line 1
+                                      :type :semicolon
+                                      :literal nil
+                                      :lexeme ";"))
+                     (eof-token
+                       (make-instance 'token
+                                      :line 1
+                                      :type :eof
+                                      :literal nil
+                                      :lexeme ""))
+                     (new-tokens (make-array (+ 2 (array-dimension tokens 0))
+                                             :fill-pointer 0
+                                             :adjustable t)))
+                 (vector-push-extend print-token new-tokens)
+                 (loop for token across tokens
+                       do (vector-push-extend token new-tokens))
+                 (vector-push-extend semicolon-token new-tokens)
+                 (vector-push-extend eof-token new-tokens)
+                 new-tokens))
           (parse-statement p))))))
 
 (defmethod parse ((p parser))

@@ -76,9 +76,13 @@
    :parser
    :parser-error
    :error-token
+   :parsed-expr
+   :had-parse-error
+   :in-restart
    :open-blocks
    :sync-after-parse-error
    :restart-with-new-line
+   :restart-with-implicit-stmt
    :parser-error-message))
 
 (defpackage :interpreter

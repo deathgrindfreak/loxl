@@ -42,12 +42,18 @@
       (scanner-error (e) (handle-scanner-error l e)))))
 
 (defmethod parser-restarts ((l loxl) e)
-  (if (eq :eof (token-type (error-token e)))
-      (invoke-restart 'restart-with-new-line
-                      (restart-with-new-line l e))
-      (progn
-        (handle-parse-error l e)
-        (invoke-restart 'sync-after-parse-error))))
+  (cond
+    ((and (not (in-restart e))
+          (not (had-parse-error e))
+          (parsed-expr e))
+     (invoke-restart 'restart-with-implicit-stmt))
+    ((and (not (had-parse-error e))
+          (eq :eof (token-type (error-token e))))
+     (invoke-restart 'restart-with-new-line
+                     (restart-with-new-line l e)))
+    (t (progn
+         (handle-parse-error l e)
+         (invoke-restart 'sync-after-parse-error)))))
 
 (defmethod run-prompt ((l loxl))
   (let ((interpreter (make-instance 'interpreter)))
