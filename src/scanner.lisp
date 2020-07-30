@@ -97,7 +97,8 @@
 
 (defmethod identifier ((s scanner))
   (loop while (or (digit-char-p (peek s))
-                  (alpha-char-p (peek s)))
+                  (alpha-char-p (peek s))
+                  (char= #\_ (peek s)))
         do (advance s))
   (add-token s (let ((word (string-from-buffer s)))
                  (or (is-keyword word)
@@ -165,7 +166,7 @@
         (otherwise
          (cond
            ((digit-char-p c) (num s))
-           ((alpha-char-p c) (identifier s))
+           ((or (char= #\_ c) (alpha-char-p c)) (identifier s))
            (t (throw-scanner-error s "Unexpected char."))))))))
 
 (defmethod scan-tokens ((s scanner))

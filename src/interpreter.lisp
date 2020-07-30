@@ -8,6 +8,7 @@
    (is-breaking :initform nil :accessor is-breaking)))
 
 (defmethod initialize-instance :after ((i interpreter) &rest args)
+  (declare (ignore args))
   (setf (environment i) (globals i))
   (define (globals i) "clock" (make-instance 'clock) t))
 
@@ -184,11 +185,11 @@
           (otherwise nil))))))
 
 (defmethod evaluate ((i interpreter) (u unary))
-  (with-slots (ast::right ast::operator) u
-    (let ((expr (evaluate i ast::right)))
-      (case (token-type ast::operator)
+  (with-slots ((right ast::right) (op ast::operator)) u
+    (let ((expr (evaluate i right)))
+      (case (token-type op)
         (:minus
-         (check-number-operand ast::operator ast::right)
+         (check-number-operand op expr)
          (- expr))
         (:bang (not expr))
         (otherwise nil)))))

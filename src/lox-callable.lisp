@@ -12,6 +12,11 @@
    (closure :initarg :closure
             :reader closure)))
 
+(defmethod print-object ((lc lox-function) out)
+  (with-slots (declaration) lc
+    (with-slots ((name ast::name)) declaration
+      (format out "<fn ~a>" (lexeme name)))))
+
 (defmethod arity ((l lox-function))
   (with-slots ((params ast::params)) (fn-declaration l)
     (length params)))
@@ -26,8 +31,13 @@
                                            (return-from call-fun (return-value c)))))
         (execute-block i body env)))))
 
+(defclass native-lox-function (lox-callable) ())
+
+(defmethod print-object ((lc native-lox-function) out)
+  (format out "<native fn>"))
+
 ;; Native clock function
-(defclass clock (lox-callable) ())
+(defclass clock (native-lox-function) ())
 
 (defmethod arity ((l clock)) 0)
 

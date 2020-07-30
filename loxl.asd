@@ -20,4 +20,13 @@
                (:file "environment")
                (:file "interpreter")
                (:file "lox-callable")
-               (:file "loxl")))
+               (:file "loxl"))
+  :in-order-to ((test-op (test-op "loxl/tests"))))
+
+(defsystem loxl/tests
+  :depends-on (:loxl :fiveam)
+  :components ((:module "t"
+                :serial t
+                :components ((:file "package")
+                             (:file "main"))))
+  :perform (test-op (o s) (uiop:symbol-call :fiveam :run! 'loxl-tests:all-tests)))

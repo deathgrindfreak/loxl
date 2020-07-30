@@ -106,4 +106,6 @@
    :token
    :ast)
   (:export
-   :main))
+   :main
+   :run-prompt
+   :run-file))
