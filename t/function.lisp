@@ -27,7 +27,7 @@
 (test-loxl-file "function/missing_comma_in_parameters" :expected '())
 
 (test-loxl-file "function/mutual_recursion"
-  :expected '("T" "T"))
+  :expected '("true" "true"))
 
 (test-loxl-file "function/parameters"
   :expected '("0" "1" "3" "6" "10" "15" "21" "28" "36"))

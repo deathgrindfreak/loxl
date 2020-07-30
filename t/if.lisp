@@ -27,10 +27,10 @@
   :expected '("[line 2] Error at 'fun': Expect expression."))
 
 (test-loxl-file "if/if"
-  :expected '("good" "block" "T"))
+  :expected '("good" "block" "true"))
 
 (test-loxl-file "if/truth"
-  :expected '("false" "nil" "T" "0" "empty"))
+  :expected '("false" "nil" "true" "0" "empty"))
 
 (test-loxl-file "if/var_in_else"
   :expected '("[line 2] Error at 'var': Expect expression."))

@@ -7,8 +7,8 @@
 (in-suite bool-tests)
 
 (test-loxl-file "bool/equality"
-  :expected '("T" "nil" "nil" "T" "nil" "nil" "nil" "nil" "nil" "nil"
-              "T" "T" "nil" "T" "T" "T" "T" "T"))
+  :expected '("true" "nil" "nil" "true" "nil" "nil" "nil" "nil" "nil" "nil"
+              "true" "true" "nil" "true" "true" "true" "true" "true"))
 
 (test-loxl-file "bool/not"
-  :expected '("nil" "T" "T"))
+  :expected '("nil" "true" "true"))

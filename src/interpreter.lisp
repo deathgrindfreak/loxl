@@ -202,6 +202,7 @@
 
 (defun stringify (object)
   (cond ((null object) "nil")
+        ((eq t object) "true")
         ((numberp object) (format nil "~d"
                                   (if (and (rationalp object)
                                            (not (integerp object)))
