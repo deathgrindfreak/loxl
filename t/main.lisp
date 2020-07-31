@@ -24,7 +24,7 @@
        ,(if skip-test
             `(skip ,skip-test)
             `(let ((,out-str (make-array '(0)
-                                         :element-type 'base-char
+                                         :element-type 'character
                                          :adjustable t
                                          :fill-pointer 0)))
                (with-output-to-string (,out ,out-str)
