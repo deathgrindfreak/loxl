@@ -40,6 +40,7 @@
                              (:file "if")
                              (:file "logical-operator")
                              (:file "nil")
-                             (:file "number"))))
+                             (:file "number")
+                             (:file "operator"))))
   :perform (test-op (o s)
                     (uiop:symbol-call :fiveam :run! (uiop:find-symbol* 'all-tests :loxl-tests))))
