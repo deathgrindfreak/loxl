@@ -1,0 +1,30 @@
+(in-package :loxl-tests)
+
+(def-suite variable-tests
+  :description "Tests involving variables"
+  :in all-tests)
+
+(in-suite variable-tests)
+
+(test-loxl-file "variable/collide_with_parameter" :expected '("Error at 'a': Variable with this name already declared in this scope."))
+(test-loxl-file "variable/duplicate_local" :expected '("Error at 'a': Variable with this name already declared in this scope."))
+(test-loxl-file "variable/duplicate_parameter" :expected '("Error at 'arg': Variable with this name already declared in this scope."))
+(test-loxl-file "variable/early_bound" :expected '("outer" "outer"))
+(test-loxl-file "variable/in_middle_of_block" :expected '("a" "a b" "a c" "a b d"))
+(test-loxl-file "variable/in_nested_block" :expected '("outer"))
+(test-loxl-file "variable/local_from_method" :skip "Need to implement classes." :expected '())
+(test-loxl-file "variable/redeclare_global" :expected '())
+(test-loxl-file "variable/redefine_global" :expected '("2"))
+(test-loxl-file "variable/scope_reuse_in_different_blocks" :expected '("first" "second"))
+(test-loxl-file "variable/shadow_and_local" :expected '("outer" "inner"))
+(test-loxl-file "variable/shadow_global" :expected '("shadow" "global"))
+(test-loxl-file "variable/shadow_local" :expected '("shadow" "local"))
+(test-loxl-file "variable/undefined_global" :expected '("[line 1] Error: Undefined variable 'notDefined'."))
+(test-loxl-file "variable/undefined_local" :expected '("[line 2] Error: Undefined variable 'notDefined'."))
+(test-loxl-file "variable/uninitialized" :expected '("[line 2] Error: Uninitialized variable 'a'."))
+(test-loxl-file "variable/unreached_undefined" :expected '("ok"))
+(test-loxl-file "variable/use_false_as_var" :expected '("[line 2] Error at 'false': Expect variable name."))
+(test-loxl-file "variable/use_global_in_initializer" :expected '("value"))
+(test-loxl-file "variable/use_local_in_initializer" :expected '("Error at 'a': Cannot read local variable in its own initializer."))
+(test-loxl-file "variable/use_nil_as_var" :expected '("[line 2] Error at 'nil': Expect variable name."))
+(test-loxl-file "variable/use_this_as_var" :skip "Need to implement classes." :expected '())
