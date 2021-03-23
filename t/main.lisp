@@ -29,5 +29,5 @@
                                          :fill-pointer 0)))
                (with-output-to-string (,out ,out-str)
                  (let ((*standard-output* ,out))
-                   (loxl:main ',(list (concatenate 'string "../t/data/" file ".lox"))))
+                   (loxl:main ',(concatenate 'string "../t/data/" file ".lox")))
                  (is (equal (format-loxl-output ,out-str) ,expected-output))))))))

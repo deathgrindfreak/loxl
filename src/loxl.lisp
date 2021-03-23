@@ -72,7 +72,7 @@
                            (invoke-restart 'sync-after-parse-error))))
         (run-with-error-handling l interpreter in)))))
 
-(defun main (&optional args)
+(defun main (&rest args)
   (let ((l (make-instance 'loxl)))
     (cond ((> (length args) 1)
            (error "Usage: loxl [script]"))

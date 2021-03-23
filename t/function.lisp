@@ -7,7 +7,7 @@
 (in-suite function-tests)
 
 (test-loxl-file "function/body_must_be_block"
-  :expected '())
+  :expected '("[line 3] Error at '123': Expect '{' before function body."))
 
 (test-loxl-file "function/empty_body"
   :expected '("nil"))

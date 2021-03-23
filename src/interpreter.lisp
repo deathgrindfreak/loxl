@@ -14,11 +14,11 @@
 
 (defun check-number-operand (operator operand)
   (unless (numberp operand)
-    (throw-runtime-error operator "Operand must be a number.")))
+    (throw-runtime-error operator "Operands must be numbers.")))
 
 (defun check-number-operands (operator left right)
   (unless (and (numberp left) (numberp right))
-    (throw-runtime-error operator "Operands must be a numbers.")))
+    (throw-runtime-error operator "Operands must be numbers.")))
 
 (defmethod perform-break ((i interpreter))
   (when (is-breaking i)
@@ -165,12 +165,13 @@
           (:plus (cond
                    ((and (numberp l) (numberp r))
                     (+ l r))
-                   ((or (stringp l) (stringp r))
+                   ((and (or (numberp l) (stringp l))
+                         (or (numberp r) (stringp r)))
                     (format nil "~a~a" l r))
                    (t (throw-runtime-error
                        operator
                        "Operands must be two numbers or two strings."))))
-          (:slash (if (zerop r)
+          (:slash (if (and (numberp r) (zerop r))
                       (throw-runtime-error
                        operator
                        "Division by zero.")
