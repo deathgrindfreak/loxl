@@ -42,4 +42,4 @@
 (defmethod arity ((l clock)) 0)
 
 (defmethod call-fun ((l clock) (i interpreter) arguments)
-  (/ (get-universal-time) 1000.0))
+  (/ (get-internal-real-time) internal-time-units-per-second))

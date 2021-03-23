@@ -79,6 +79,7 @@
         (run-with-error-handling l interpreter in)))))
 
 (defun main ()
+  (sb-ext:disable-debugger)
   (let ((l (make-instance 'loxl))
         (args (uiop:command-line-arguments)))
     (cond ((> (length args) 1)
