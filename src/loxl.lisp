@@ -33,7 +33,8 @@
 
 (defun indent-line (current-indent)
   (loop repeat current-indent do (princ "..")
-        finally (princ ". ")))
+        finally (princ ". "))
+  (finish-output))
 
 (defmethod restart-with-new-line ((l loxl) e)
   (indent-line (open-blocks e))
@@ -58,13 +59,15 @@
 (defmethod run-prompt ((l loxl))
   (let ((interpreter (make-instance 'interpreter)))
     (format t "> ")
+    (finish-output)
     (loop
       for line = (read-line *standard-input* nil nil)
       while line
       do (with-input-from-string (in line)
            (handler-bind ((parser-error #'(lambda (e) (parser-restarts l e))))
              (run-with-error-handling l interpreter in)))
-      (format t "> "))))
+         (format t "> ")
+         (finish-output))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name)
