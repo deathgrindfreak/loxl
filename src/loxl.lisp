@@ -57,11 +57,14 @@
 
 (defmethod run-prompt ((l loxl))
   (let ((interpreter (make-instance 'interpreter)))
-    (loop do
-      (format t "> ")
-      (with-input-from-string (in (read-line))
-        (handler-bind ((parser-error #'(lambda (e) (parser-restarts l e))))
-          (run-with-error-handling l interpreter in))))))
+    (format t "> ")
+    (loop
+      for line = (read-line *standard-input* nil nil)
+      while line
+      do (with-input-from-string (in line)
+           (handler-bind ((parser-error #'(lambda (e) (parser-restarts l e))))
+             (run-with-error-handling l interpreter in)))
+      (format t "> "))))
 
 (defmethod run-file ((l loxl) file-name)
   (with-open-file (in file-name)
@@ -72,8 +75,9 @@
                            (invoke-restart 'sync-after-parse-error))))
         (run-with-error-handling l interpreter in)))))
 
-(defun main (&rest args)
-  (let ((l (make-instance 'loxl)))
+(defun main ()
+  (let ((l (make-instance 'loxl))
+        (args (uiop:command-line-arguments)))
     (cond ((> (length args) 1)
            (error "Usage: loxl [script]"))
           ((= 1 (length args))
