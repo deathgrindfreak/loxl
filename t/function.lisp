@@ -16,7 +16,7 @@
   :expected '("[line 6] Error: Expected 2 arguments but got 4."))
 
 (test-loxl-file "function/local_mutual_recursion"
-  :expected '("21"))
+  :expected '("true"))
 
 (test-loxl-file "function/local_recursion"
   :expected '("21"))
@@ -24,7 +24,8 @@
 (test-loxl-file "function/missing_arguments"
   :expected '("[line 3] Error: Expected 2 arguments but got 1."))
 
-(test-loxl-file "function/missing_comma_in_parameters" :expected '())
+(test-loxl-file "function/missing_comma_in_parameters"
+  :expected '("[line 3] Error at 'c': Expect ')' after parameters."))
 
 (test-loxl-file "function/mutual_recursion"
   :expected '("true" "true"))

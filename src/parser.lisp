@@ -205,6 +205,9 @@
     (consume p :semicolon "Expect ';' after expression." expr)
     (make-instance 'expr-stmt :expression expr)))
 
+(defparameter *in-function-declaration* nil
+  "Keeps track of whether we're inside of a function call for return params")
+
 (defmethod fun-declaration ((p parser) kind)
   (let ((name (consume p :identifier
                        (format nil "Expect ~a name." kind))))
@@ -215,12 +218,15 @@
                                 do (throw-parser-error p "Cannot have more than 255 parameters.")
                               collect (consume p :identifier "Expect parameter name.")
                               while (match p :comma)))))
-      (consume p :right-paren "Expect ')' after ~a parameters.")
+      (consume p :right-paren "Expect ')' after parameters.")
       (consume p :left-brace (format nil "Expect '{' before ~a body." kind))
-      (make-instance 'fun-stmt
-                     :name name
-                     :params parameters
-                     :body (block-statement p)))))
+      (setf *in-function-declaration* t)
+      (let ((body (block-statement p)))
+        (setf *in-function-declaration* nil)
+        (make-instance 'fun-stmt
+                       :name name
+                       :params parameters
+                       :body body)))))
 
 (defmethod var-declaration ((p parser))
   (let ((name (consume p :identifier "Expect variable name."))
@@ -313,6 +319,8 @@
         (value))
     (unless (check p :semicolon)
       (setf value (expression p)))
+    (when (not *in-function-declaration*)
+      (throw-parser-error p "Cannot return from top-level code."))
     (consume p :semicolon "Expect ';' after return value.")
     (make-instance 'return-stmt
                    :keyword keyword
