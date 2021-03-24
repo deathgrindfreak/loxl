@@ -220,9 +220,9 @@
                               while (match p :comma)))))
       (consume p :right-paren "Expect ')' after parameters.")
       (consume p :left-brace (format nil "Expect '{' before ~a body." kind))
-      (setf *in-function-declaration* t)
+      (push name *in-function-declaration*)
       (let ((body (block-statement p)))
-        (setf *in-function-declaration* nil)
+        (pop *in-function-declaration*)
         (make-instance 'fun-stmt
                        :name name
                        :params parameters
@@ -315,12 +315,14 @@
     (make-instance 'loop-keyword-stmt :keyword keyword)))
 
 (defmethod return-statement ((p parser))
+  (when (not *in-function-declaration*)
+    ;; Show the "return" keyword in the error and not the body
+    (decf (slot-value p 'current))
+    (throw-parser-error p "Cannot return from top-level code."))
   (let ((keyword (previous p))
         (value))
     (unless (check p :semicolon)
       (setf value (expression p)))
-    (when (not *in-function-declaration*)
-      (throw-parser-error p "Cannot return from top-level code."))
     (consume p :semicolon "Expect ';' after return value.")
     (make-instance 'return-stmt
                    :keyword keyword
