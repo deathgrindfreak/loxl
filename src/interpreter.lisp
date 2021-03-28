@@ -46,6 +46,14 @@
       (define (environment i) (lexeme name) function t)
       nil)))
 
+(defmethod evaluate ((i interpreter) (stmt anon-fun-stmt))
+  (with-slots ((name ast::name)) stmt
+    (let ((function (make-instance 'lox-function
+                                   :declaration stmt
+                                   :closure (environment i))))
+      (define (environment i) (lexeme name) function t)
+      function)))
+
 (defmethod evaluate ((i interpreter) (expr call))
   (with-slots ((callee ast::callee)
                (paren ast::paren)
@@ -212,5 +220,5 @@
         (t (format nil "~a" object))))
 
 (defmethod interpret ((i interpreter) statements)
-  (loop for statement in statements
-        do (evaluate i statement)))
+  (dolist (statement statements)
+    (evaluate i statement)))

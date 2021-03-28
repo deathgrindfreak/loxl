@@ -45,12 +45,17 @@
   (while-stmt (expr condition) (stmt body))
   (loop-keyword-stmt (token keyword))
   (fun-stmt (token name) (cons params) (cons body))
+  (anon-fun-stmt (token name) (cons params) (cons body))
   (return-stmt (token keyword) (expr value))
   (if-stmt (expr condition) (stmt then-branch) (stmt else-branch))
   (block-stmt (cons statements))
   (var-stmt (token name) (expr initializer) (boolean was-initialized))
   (expr-stmt (expr expression))
   (print-stmt (expr expression)))
+
+(defun print-tree (statements)
+  (dolist (statement statements)
+    (format t "~a~%" (print-ast statement))))
 
 (defgeneric print-ast (expr)
   (:documentation "Pretty prints the AST"))
@@ -62,9 +67,27 @@
               (mapcar #'print-ast args))
       name))
 
+(defmethod print-ast ((e fun-stmt))
+  (with-slots (name params body) e
+    (apply #'parenthesize
+           (format nil "fun ~a(~{~a~^, ~})"
+                   (lexeme name)
+                   (mapcar #'lexeme params))
+           body)))
+
+(defmethod print-ast ((e anon-fun-stmt))
+  (with-slots (name params body) e
+    (apply #'parenthesize
+           (format nil "lambda ~a(~{~a~^, ~})"
+                   (lexeme name)
+                   (mapcar #'lexeme params))
+           body)))
+
 (defmethod print-ast ((e call))
   (with-slots (callee arguments) e
-    (apply #'parenthesize (print-ast callee) arguments)))
+    (format nil "~a(~{~a~^, ~})"
+            (print-ast callee)
+            (mapcar #'print-ast arguments))))
 
 (defmethod print-ast ((s loop-keyword-stmt))
   (with-slots (keyword) s
@@ -103,6 +126,10 @@
 (defmethod print-ast ((s print-stmt))
   (with-slots (expression) s
     (parenthesize "print" expression)))
+
+(defmethod print-ast ((s return-stmt))
+  (with-slots (keyword value) s
+    (parenthesize (lexeme keyword) value)))
 
 (defmethod print-ast ((b ternary))
   (with-slots (predicate true-expr false-expr) b

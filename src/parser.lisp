@@ -93,7 +93,7 @@
 (defmethod finish-call ((p parser) callee)
   (let ((arguments (unless (check p :right-paren)
                      (loop for total-arguments = 0 then (1+ total-arguments)
-                           collect (assignment p)
+                           collect (lambda-declaration p)
                            do (when (>= total-arguments 255)
                                 (throw-parser-error p "Cannot have more than 255 arguments."))
                            while (match p :comma)))))
@@ -192,6 +192,42 @@
   :operand assignment
   :operators (:comma))
 
+(defparameter *in-function-declaration* 0
+  "Keeps track of whether we're inside of a function call for return params")
+
+(defmethod fun-body ((p parser) kind)
+  (let ((parameters (unless (check p :right-paren)
+                      (loop for param-count = 0 then (1+ param-count)
+                            when (>= param-count 255)
+                              do (throw-parser-error p "Cannot have more than 255 parameters.")
+                            collect (consume p :identifier "Expect parameter name.")
+                            while (match p :comma)))))
+    (consume p :right-paren "Expect ')' after parameters.")
+    (consume p :left-brace (format nil "Expect '{' before ~a body." kind))
+    (incf *in-function-declaration*)
+    (let ((body (block-statement p)))
+      (decf *in-function-declaration*)
+      (list parameters body))))
+
+(defmethod anon-fun ((p parser))
+  (consume p :left-paren
+           (format nil "Expect '(' after fun declaration."))
+  (let ((decl-line (token-line (previous p))))
+    (destructuring-bind (parameters body) (fun-body p "lambda")
+      (let ((name (make-instance 'token
+                                 :type :identifier
+                                 :lexeme (gensym)
+                                 :literal nil
+                                 :line decl-line)))
+        (make-instance 'anon-fun-stmt
+                       :name name
+                       :params parameters
+                       :body body)))))
+
+(defmethod lambda-declaration ((p parser))
+  (cond ((match p :fun) (anon-fun p))
+        (t (assignment p))))
+
 (defmethod expression ((p parser))
   (comma p))
 
@@ -205,28 +241,16 @@
     (consume p :semicolon "Expect ';' after expression." expr)
     (make-instance 'expr-stmt :expression expr)))
 
-(defparameter *in-function-declaration* nil
-  "Keeps track of whether we're inside of a function call for return params")
-
 (defmethod fun-declaration ((p parser) kind)
   (let ((name (consume p :identifier
                        (format nil "Expect ~a name." kind))))
-    (consume p :left-paren (format nil "Expect '(' after ~a name." kind))
-    (let ((parameters (unless (check p :right-paren)
-                        (loop for param-count = 0 then (1+ param-count)
-                              when (>= param-count 255)
-                                do (throw-parser-error p "Cannot have more than 255 parameters.")
-                              collect (consume p :identifier "Expect parameter name.")
-                              while (match p :comma)))))
-      (consume p :right-paren "Expect ')' after parameters.")
-      (consume p :left-brace (format nil "Expect '{' before ~a body." kind))
-      (push name *in-function-declaration*)
-      (let ((body (block-statement p)))
-        (pop *in-function-declaration*)
-        (make-instance 'fun-stmt
-                       :name name
-                       :params parameters
-                       :body body)))))
+    (consume p :left-paren
+             (format nil "Expect '(' after ~a name." kind))
+    (destructuring-bind (parameters body) (fun-body p kind)
+      (make-instance 'fun-stmt
+                     :name name
+                     :params parameters
+                     :body body))))
 
 (defmethod var-declaration ((p parser))
   (let ((name (consume p :identifier "Expect variable name."))
@@ -315,7 +339,7 @@
     (make-instance 'loop-keyword-stmt :keyword keyword)))
 
 (defmethod return-statement ((p parser))
-  (when (not *in-function-declaration*)
+  (when (zerop *in-function-declaration*)
     ;; Show the "return" keyword in the error and not the body
     (decf (slot-value p 'current))
     (throw-parser-error p "Cannot return from top-level code."))
@@ -354,6 +378,7 @@
                     (setf (slot-value p 'in-restart) t)
                     stmt)
       ;; Can't parse anymore, sync and print out errors
+      ;; TODO synchronize seems to be a bit broken
       (sync-after-parse-error ()
         (setf (slot-value p 'had-parse-error) t)
         (synchronize p))

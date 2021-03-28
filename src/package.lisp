@@ -32,6 +32,7 @@
   (:export
    :call
    :fun-stmt
+   :anon-fun-stmt
    :return-stmt
    :logical
    :while-stmt
@@ -49,6 +50,7 @@
    :grouping
    :literal
    :unary
+   :print-tree
    :print-ast))
 
 (defpackage :scanner

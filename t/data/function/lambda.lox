@@ -1,0 +1,2 @@
+fun plusOne(fn) { return fn() + 1; }
+print plusOne(fun () { return 2; });

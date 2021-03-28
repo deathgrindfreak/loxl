@@ -45,3 +45,6 @@
 
 (test-loxl-file "function/too_many_parameters"
   :expected '("[line 257] Error at 'a': Cannot have more than 255 parameters."))
+
+(test-loxl-file "function/lambda"
+  :expected '("3"))

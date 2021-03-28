@@ -15,6 +15,7 @@ Loxl tests against all of the *.lox files in the Crafting Interpreters github re
 * Comma and Ternary operators
 * Accessing non-initialized variables throws an error
 * Break keyword for while/for loops
+* Anonymous functions
 
 ## Misc Additions
 * Repl can handle multi-line input from the user
